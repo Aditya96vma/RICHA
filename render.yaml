@@ -1,0 +1,38 @@
+# FILE: render.yaml
+# SECURITY: Server-side environment secrets isolation; public build-time Vite variables
+# AGENT: Primary Deployment Specification (Render Web Service)
+
+services:
+  - type: web
+    name: aria-executive-function
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PROVIDER
+        value: gemini
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OLLAMA_BASE_URL
+        value: http://localhost:11434
+      # Optional: Google Cloud Project ID (Only needed if utilizing GCP Secret Manager / Cloud Run)
+      - key: GOOGLE_CLOUD_PROJECT
+        sync: false
+      # Optional Firebase Client Configuration (Falls back to Sandbox Mode if omitted)
+      - key: VITE_FIREBASE_API_KEY
+        sync: false
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: VITE_FIREBASE_PROJECT_ID
+        sync: false
+      - key: VITE_FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: VITE_FIREBASE_APP_ID
+        sync: false

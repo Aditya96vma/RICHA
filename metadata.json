@@ -1,0 +1,9 @@
+{
+  "name": "RICHA — Executive Function Journal",
+  "description": "RICHA — Conversational Journal & Executive Function Assistant for neurodivergent minds, with memory tracking, geo-tagging, feeling analysis, and auto-generated first-person diary entries.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
