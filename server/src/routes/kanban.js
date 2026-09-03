@@ -71,7 +71,7 @@ router.patch('/:cardId/move', async (req, res) => {
   const { cardId } = req.params;
   const { column } = req.body || {};
 
-  const validColumns = ['backlog', 'this_week', 'in_progress', 'done', 'recurring'];
+  const validColumns = ['backlog', 'this_week', 'in_progress', 'done', 'recurring', 'blocked'];
   if (!column || !validColumns.includes(column)) {
     return res.status(400).json({ error: 'Invalid destination column.' });
   }
@@ -82,10 +82,57 @@ router.patch('/:cardId/move', async (req, res) => {
       return res.status(404).json({ error: 'Kanban card not found.' });
     }
 
+    const isBlocked = column === 'blocked' || Boolean(req.body.isBlocked);
+    const blockedReason = isBlocked ? (req.body.blockedReason || existing.blockedReason || 'Waiting on external dependency') : null;
+
     const updatedData = {
       ...existing,
       column,
-      enteredInProgressAt: column === 'in_progress' ? (existing.enteredInProgressAt || new Date().toISOString()) : null,
+      isBlocked,
+      blockedReason,
+      enteredInProgressAt: column === 'in_progress' && !isBlocked ? (existing.enteredInProgressAt || new Date().toISOString()) : null,
+      updatedAt: new Date().toISOString()
+    };
+
+    await saveDocument(uid, 'kanban', cardId, updatedData);
+
+    // Non-blocking log to session_events (Dimension 3)
+    saveDocument(uid, 'session_events', `event_kanban_${Date.now()}`, {
+      id: `event_kanban_${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      agentId: 'Kanban & Habits Agent',
+      actionType: 'kanban_move',
+      sourceInput: `Card: ${existing.title} moved to ${column}`,
+      writeStatus: 'executed',
+      payloadRef: `kanban/${cardId}`,
+      payload: { cardId, from: existing.column, to: column, isBlocked }
+    }).catch(() => {});
+
+    return res.json({ success: true, card: updatedData });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PATCH /api/kanban/:cardId/block
+ * Toggles blocked/waiting status (exempts card from active WIP calculation)
+ */
+router.patch('/:cardId/block', async (req, res) => {
+  const uid = req.user.uid;
+  const { cardId } = req.params;
+  const { isBlocked, blockedReason } = req.body || {};
+
+  try {
+    const existing = await getDocument(uid, 'kanban', cardId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Card not found.' });
+    }
+
+    const updatedData = {
+      ...existing,
+      isBlocked: Boolean(isBlocked),
+      blockedReason: isBlocked ? (blockedReason || 'Waiting on reply / blocker') : null,
       updatedAt: new Date().toISOString()
     };
 

@@ -37,7 +37,11 @@ import {
   Zap,
   ArrowRight,
   Trash2,
-  Download
+  Download,
+  ShieldAlert,
+  EyeOff,
+  Sliders,
+  ChevronDown
 } from 'lucide-react';
 
 interface ChatMessage {
@@ -48,6 +52,31 @@ interface ChatMessage {
   intent?: string;
   timestamp: string;
   isJournalEntry?: boolean;
+  pendingMemories?: Array<{
+    category: string;
+    key: string;
+    value: string;
+    originalText?: string;
+    confidence?: number;
+    status?: 'pending' | 'confirmed' | 'rejected';
+  }>;
+  orchestration?: {
+    strategy?: string;
+    primaryAgent?: string;
+    secondaryAgent?: string;
+    confidence?: number;
+    isLowConfidence?: boolean;
+    clarificationOptions?: Array<{
+      agentId: string;
+      label: string;
+      prompt: string;
+    }>;
+    handoff?: {
+      from: string;
+      to: string;
+      reason: string;
+    };
+  };
 }
 
 interface UserMemory {
@@ -90,6 +119,49 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
   const [userMemory, setUserMemory] = useState<UserMemory | null>(null);
   const [savedEntries, setSavedEntries] = useState<any[]>([]);
   const [errorInfo, setErrorInfo] = useState<{ message: string; unsavedPayload?: any } | null>(null);
+  
+  // Architectural Dimensions 1, 2, 5: Orchestration Controls, Sanctuary Mode & Verbosity
+  const [verbosity, setVerbosity] = useState<'micro' | 'standard' | 'deep'>('standard');
+  const [incognito, setIncognito] = useState<boolean>(false);
+  const [selectedAgentOverride, setSelectedAgentOverride] = useState<string | null>(null);
+
+  const handleConfirmMemory = async (msgId: string, item: any, index: number) => {
+    try {
+      const token = await getIdToken();
+      const res = await fetch('/api/data/profile/memory/confirm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(item)
+      });
+      if (res.ok) {
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== msgId || !m.pendingMemories) return m;
+            const updated = [...m.pendingMemories];
+            updated[index] = { ...updated[index], status: 'confirmed' };
+            return { ...m, pendingMemories: updated };
+          })
+        );
+        fetchMemoryVault();
+      }
+    } catch (e) {
+      console.error('Failed to confirm memory:', e);
+    }
+  };
+
+  const handleRejectMemory = (msgId: string, index: number) => {
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== msgId || !m.pendingMemories) return m;
+        const updated = [...m.pendingMemories];
+        updated[index] = { ...updated[index], status: 'rejected' };
+        return { ...m, pendingMemories: updated };
+      })
+    );
+  };
   
   // Geolocation state
   const [currentLocation, setCurrentLocation] = useState<{
@@ -453,7 +525,7 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
     }
   };
 
-  const handleSendMessage = async (textToSend?: string) => {
+  const handleSendMessage = async (textToSend?: string, overrideAgentParam?: string) => {
     const text = textToSend || inputValue;
     if (!text.trim() || loading) return;
 
@@ -480,6 +552,8 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
       localStorage.setItem('richa_last_session_date', todayStr);
       setShowDueReminderBanner(false);
 
+      const resolvedOverride = overrideAgentParam || selectedAgentOverride || undefined;
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -490,6 +564,9 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
           content: currentInput,
           sessionId: 'main-reflection-session',
           voiceMode,
+          overrideAgent: resolvedOverride,
+          verbosity,
+          incognito,
           location: currentLocation || undefined,
           history: messages.map(m => ({ sender: m.sender, text: m.text }))
         })
@@ -518,6 +595,8 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
         agentName: data.agentName || 'RICHA Companion',
         intent: data.intent,
         isJournalEntry: isJournalDraft,
+        pendingMemories: data.pendingMemories ? data.pendingMemories.map((m: any) => ({ ...m, status: 'pending' })) : undefined,
+        orchestration: data.orchestration,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
@@ -565,6 +644,84 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Sensory Shield Fast Trigger Button (Dimension 2: Fast-path Shield) */}
+          <button
+            type="button"
+            onClick={() => handleSendMessage('/shield', 'sensory_shield')}
+            className="px-3.5 py-1.5 rounded-lg text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Fast-path Sensory Shield for acute sensory overload, overwhelm, or panic"
+          >
+            <Shield className="w-3.5 h-3.5 fill-white text-white" />
+            <span>🛡️ Sensory Shield</span>
+          </button>
+
+          {/* Sanctuary Mode / Incognito Toggle (Dimension 5: Sovereignty & Privacy) */}
+          <button
+            type="button"
+            onClick={() => setIncognito(!incognito)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5 transition-all ${
+              incognito
+                ? 'bg-rose-100 text-rose-950 border-rose-900 font-extrabold shadow-[2px_2px_0px_0px_rgba(159,18,57,1)]'
+                : 'bg-white hover:bg-slate-100 text-slate-700'
+            }`}
+            title="Sanctuary Mode: Off-the-record conversation. Ephemeral context without writing memories or audit logs."
+          >
+            <EyeOff className={`w-3.5 h-3.5 ${incognito ? 'text-rose-700' : 'text-slate-500'}`} />
+            <span>{incognito ? 'Sanctuary (Off-Record)' : 'Sanctuary'}</span>
+          </button>
+
+          {/* Verbosity Selector (Dimension 3: Cognitive Load Minimization) */}
+          <div className="flex items-center rounded-lg border-2 border-slate-900 bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] overflow-hidden text-xs">
+            <button
+              type="button"
+              onClick={() => setVerbosity('micro')}
+              className={`px-2 py-1 font-bold transition-all ${
+                verbosity === 'micro' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+              title="Micro verbosity: 1-2 bullet points or short sentence"
+            >
+              Micro
+            </button>
+            <button
+              type="button"
+              onClick={() => setVerbosity('standard')}
+              className={`px-2 py-1 font-bold border-x border-slate-300 transition-all ${
+                verbosity === 'standard' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+              title="Standard verbosity: Balanced response"
+            >
+              Standard
+            </button>
+            <button
+              type="button"
+              onClick={() => setVerbosity('deep')}
+              className={`px-2 py-1 font-bold transition-all ${
+                verbosity === 'deep' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+              title="Deep reflection: Detailed exploratory response"
+            >
+              Deep
+            </button>
+          </div>
+
+          {/* Agent Override Dropdown (Dimension 1 & 2) */}
+          <select
+            value={selectedAgentOverride || ''}
+            onChange={(e) => setSelectedAgentOverride(e.target.value ? e.target.value : null)}
+            className="px-2.5 py-1.5 text-xs font-bold bg-white text-slate-800 border-2 border-slate-900 rounded-lg shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] focus:outline-none cursor-pointer"
+            title="Force standalone routing to a specific specialized agent"
+          >
+            <option value="">Auto-Route (RICHA)</option>
+            <option value="companion">1. Companion</option>
+            <option value="planner">2. Time-Box Planner</option>
+            <option value="prioritizer">3. 4D Prioritizer</option>
+            <option value="admin_buffer">4. Admin & Buffer</option>
+            <option value="sensory_shield">5. Sensory Shield</option>
+            <option value="bullet_journal">6. Bullet Journal</option>
+            <option value="kanban_habits">7. Kanban & Habits</option>
+            <option value="reflection">8. Reflection & Diary</option>
+          </select>
+
           {/* Direct Synthesize Journal Entry Button */}
           <button
             type="button"
@@ -881,6 +1038,122 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
                             </button>
                           </div>
                         )}
+
+                        {/* Agent Handoff Notice (Dimension 2: Explicit Hand-off) */}
+                        {msg.orchestration?.handoff && (
+                          <div className="mt-2.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-2 text-xs text-blue-900 font-medium">
+                            <ArrowRight className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span>
+                              <strong>Explicit Handoff:</strong> Handed off from <em>{msg.orchestration.handoff.from}</em> to <em>{msg.orchestration.handoff.to}</em> ({msg.orchestration.handoff.reason})
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Low-Confidence Disambiguation (Dimension 1) */}
+                        {msg.orchestration?.isLowConfidence && msg.orchestration.clarificationOptions && msg.orchestration.clarificationOptions.length > 0 && (
+                          <div className="mt-3 p-3 bg-indigo-50 border-2 border-indigo-200 rounded-xl space-y-2">
+                            <p className="text-xs font-extrabold text-indigo-950">
+                              To best match your cognitive energy right now, which path feels easiest?
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {msg.orchestration.clarificationOptions.map((opt) => (
+                                <button
+                                  key={opt.agentId}
+                                  type="button"
+                                  onClick={() => handleSendMessage(opt.prompt, opt.agentId)}
+                                  className="px-3 py-1.5 bg-white hover:bg-indigo-600 hover:text-white text-indigo-900 text-xs font-bold rounded-lg border border-indigo-300 shadow-2xs transition-all"
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Memory Receipts (Dimension 5 & 1: Trust & Explicit Consent) */}
+                        {msg.pendingMemories && msg.pendingMemories.length > 0 && (
+                          <div className="mt-3 p-3 bg-amber-50/90 border-2 border-amber-300 rounded-2xl shadow-2xs space-y-2">
+                            <div className="flex items-center gap-1.5">
+                              <Brain className="w-4 h-4 text-amber-700" />
+                              <span className="text-xs font-black text-amber-950 uppercase tracking-wide">
+                                Memory Receipt • Pending Confirmation
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-amber-900/80 font-medium">
+                              RICHA identified these facts. Would you like them stored in your Memory Vault?
+                            </p>
+
+                            <div className="space-y-1.5">
+                              {msg.pendingMemories.map((mem, idx) => (
+                                <div
+                                  key={idx}
+                                  className="p-2 bg-white rounded-xl border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs text-xs"
+                                >
+                                  <div className="min-w-0">
+                                    <span className="inline-block px-1.5 py-0.5 text-[9px] font-black uppercase rounded-md bg-amber-100 text-amber-900 border border-amber-300 mr-1.5">
+                                      {mem.category}
+                                    </span>
+                                    <span className="font-bold text-slate-900">{mem.key}: </span>
+                                    <span className="text-slate-700 font-medium">{mem.value}</span>
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    {mem.status === 'confirmed' ? (
+                                      <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                        <span>Saved in Vault</span>
+                                      </span>
+                                    ) : mem.status === 'rejected' ? (
+                                      <span className="text-xs font-medium text-slate-400">Discarded</span>
+                                    ) : (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleConfirmMemory(msg.id, mem, idx)}
+                                          className="px-2.5 py-1 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer"
+                                        >
+                                          <CheckCircle2 className="w-3 h-3" />
+                                          <span>Keep in Vault</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRejectMemory(msg.id, idx)}
+                                          className="px-2 py-1 text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer"
+                                        >
+                                          Dismiss
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Agent Re-route Controls (Dimension 1) */}
+                        <div className="mt-3 pt-2 border-t border-slate-200/80 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Re-route:</span>
+                          {[
+                            { id: 'planner', label: 'Planner' },
+                            { id: 'prioritizer', label: 'Prioritizer' },
+                            { id: 'sensory_shield', label: 'Sensory Shield' },
+                            { id: 'companion', label: 'Companion' },
+                            { id: 'reflection', label: 'Reflection' }
+                          ].map((ag) => (
+                            <button
+                              key={ag.id}
+                              type="button"
+                              onClick={() => {
+                                const prevUserMsg = [...messages].reverse().find(m => m.sender === 'user');
+                                handleSendMessage(prevUserMsg ? `Please process this with ${ag.label}: ${prevUserMsg.text}` : `Help me with ${ag.label}`, ag.id);
+                              }}
+                              className="px-2 py-0.5 rounded-md bg-white hover:bg-indigo-50 hover:text-indigo-900 border border-slate-200 text-[10px] font-bold text-slate-600 transition-colors"
+                            >
+                              {ag.label}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -911,11 +1184,35 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
       <div className="px-6 py-2.5 bg-slate-100 border-t-2 border-slate-900 flex items-center gap-2 overflow-x-auto no-scrollbar text-xs">
         <button
           type="button"
+          onClick={() => handleSendMessage('/shield', 'sensory_shield')}
+          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-lg border-2 border-slate-900 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5"
+        >
+          <Shield className="w-3.5 h-3.5" />
+          <span>🛡️ Sensory Shield (/shield)</span>
+        </button>
+        <button
+          type="button"
           onClick={() => handleSendMessage('/write')}
           className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-lg border-2 border-slate-900 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5"
         >
           <Edit3 className="w-3.5 h-3.5" />
           <span>Write My Journal (/write)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSendMessage('/plan', 'planner')}
+          className="px-3 py-1.5 bg-white hover:bg-slate-50 text-indigo-900 font-bold rounded-lg border-2 border-slate-900 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1"
+        >
+          <Clock className="w-3 h-3 text-indigo-600" />
+          <span>Plan My Day (/plan)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSendMessage('/prioritize', 'prioritizer')}
+          className="px-3 py-1.5 bg-white hover:bg-slate-50 text-amber-900 font-bold rounded-lg border-2 border-slate-900 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1"
+        >
+          <Zap className="w-3 h-3 text-amber-600" />
+          <span>4D Prioritize (/prioritize)</span>
         </button>
         <button
           type="button"

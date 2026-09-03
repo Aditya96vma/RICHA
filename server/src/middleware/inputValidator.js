@@ -13,6 +13,9 @@ export const chatMessageSchema = z.object({
   sessionId: z.string().max(128).optional().default('default-session'),
   contextHint: z.string().max(64).optional(),
   voiceMode: z.boolean().optional().default(false),
+  overrideAgent: z.string().max(64).optional(),
+  verbosity: z.enum(['low', 'balanced', 'deep']).optional().default('balanced'),
+  incognito: z.boolean().optional().default(false),
   location: z.object({
     placeName: z.string().max(100).optional(),
     latitude: z.number().min(-90).max(90).optional(),
@@ -43,6 +46,9 @@ export const chatMessageSchema = z.object({
   sessionId: data.sessionId,
   contextHint: data.contextHint,
   voiceMode: Boolean(data.voiceMode),
+  overrideAgent: data.overrideAgent,
+  verbosity: data.verbosity || 'balanced',
+  incognito: Boolean(data.incognito),
   location: data.location,
   history: Array.isArray(data.history) ? data.history : [],
   clientTimestamp: data.clientTimestamp

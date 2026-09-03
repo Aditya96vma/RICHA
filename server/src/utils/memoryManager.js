@@ -23,6 +23,8 @@ export async function getUserMemory(uid) {
         moods: memoryDoc.moods || [],
         themes: memoryDoc.themes || [],
         locations: memoryDoc.locations || [],
+        sensoryTriggers: memoryDoc.sensoryTriggers || [],
+        copingStrategies: memoryDoc.copingStrategies || [],
         emotionalLandmarks: memoryDoc.emotionalLandmarks || {
           happiest: [],
           lowest: [],
@@ -59,6 +61,8 @@ function getDefaultMemory() {
     moods: [],
     themes: [],
     locations: [],
+    sensoryTriggers: [],
+    copingStrategies: [],
     emotionalLandmarks: {
       happiest: [],
       lowest: [],
@@ -353,3 +357,242 @@ export async function clearAllMemories(uid) {
   await saveDocument(uid, 'profile', 'memory', clean);
   return clean;
 }
+
+/**
+ * Detects facts from user input without silently saving them.
+ * Returns structured PendingMemory objects for ephemeral "Memory Receipts".
+ * @param {string} uid 
+ * @param {string} userText 
+ * @param {object} [options] 
+ * @returns {Promise<Array<object>>} Pending memories requiring user consent
+ */
+export async function detectPendingMemories(uid, userText, options = {}) {
+  if (!uid || !userText || options.incognito) {
+    return [];
+  }
+
+  const currentMemory = await getUserMemory(uid);
+  const textLower = userText.toLowerCase();
+  const pending = [];
+
+  // 1. People Extraction
+  const partnerMatch = userText.match(/(?:partner|friend|husband|wife|boyfriend|girlfriend|colleague|brother|sister|mom|mum|dad)\s+([A-Z][a-z]+)/i);
+  if (partnerMatch && partnerMatch[1]) {
+    const name = partnerMatch[1];
+    const relMatch = userText.match(/(partner|friend|husband|wife|boyfriend|girlfriend|colleague|brother|sister|mom|mum|dad)/i);
+    const relationship = relMatch ? relMatch[1].toLowerCase() : 'close connection';
+    const alreadySaved = currentMemory.people.some((p) => p.name.toLowerCase() === name.toLowerCase());
+    
+    if (!alreadySaved) {
+      pending.push({
+        id: `mem_person_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        category: 'people',
+        label: 'Person / Relationship',
+        title: `${name} (${relationship})`,
+        detail: `Mentioned: "${userText.slice(0, 100)}"`,
+        provenance: `Learned from conversation on ${new Date().toLocaleDateString()}`,
+        payload: {
+          name,
+          relationship,
+          context: userText.slice(0, 160),
+          lastMentioned: new Date().toISOString()
+        }
+      });
+    }
+  }
+
+  // 2. Sensory Triggers
+  if (
+    textLower.includes('fluorescent') ||
+    textLower.includes('too loud') ||
+    textLower.includes('buzzing') ||
+    textLower.includes('sound of') ||
+    textLower.includes('texture') ||
+    textLower.includes('bright light') ||
+    textLower.includes('smell of') ||
+    textLower.includes('sensory trigger')
+  ) {
+    const triggerSnippet = userText.slice(0, 120);
+    const alreadySaved = (currentMemory.sensoryTriggers || []).some(
+      (s) => (s.trigger && triggerSnippet.toLowerCase().includes(s.trigger.toLowerCase()))
+    );
+
+    if (!alreadySaved) {
+      pending.push({
+        id: `mem_sensory_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        category: 'sensoryTriggers',
+        label: 'Sensory Trigger',
+        title: 'Sensitivity / Trigger',
+        detail: triggerSnippet,
+        provenance: `Noticed in conversation on ${new Date().toLocaleDateString()}`,
+        payload: {
+          trigger: triggerSnippet,
+          date: new Date().toISOString().split('T')[0],
+          recordedAt: new Date().toISOString()
+        }
+      });
+    }
+  }
+
+  // 3. Calming Anchors / Coping Strategies
+  if (
+    textLower.includes('helps me calm') ||
+    textLower.includes('soothes me') ||
+    textLower.includes('grounding') ||
+    textLower.includes('weighted blanket') ||
+    textLower.includes('noise cancelling') ||
+    textLower.includes('dim lights') ||
+    textLower.includes('safe food') ||
+    textLower.includes('stimming')
+  ) {
+    const strategySnippet = userText.slice(0, 120);
+    const alreadySaved = (currentMemory.copingStrategies || []).some(
+      (c) => (c.strategy && strategySnippet.toLowerCase().includes(c.strategy.toLowerCase()))
+    );
+
+    if (!alreadySaved) {
+      pending.push({
+        id: `mem_coping_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        category: 'copingStrategies',
+        label: 'Calming Anchor',
+        title: 'Coping Anchor',
+        detail: strategySnippet,
+        provenance: `Noticed in conversation on ${new Date().toLocaleDateString()}`,
+        payload: {
+          strategy: strategySnippet,
+          date: new Date().toISOString().split('T')[0],
+          recordedAt: new Date().toISOString()
+        }
+      });
+    }
+  }
+
+  // 4. Appointments & Commitments
+  const dateMatch = userText.match(/(?:on|this|next)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i);
+  if (dateMatch && (textLower.includes('appointment') || textLower.includes('meeting') || textLower.includes('dentist') || textLower.includes('doctor'))) {
+    const day = dateMatch[1];
+    const what = textLower.includes('dentist') ? 'Dentist' : textLower.includes('doctor') ? 'Doctor appointment' : 'Meeting / Commitment';
+    const alreadySaved = currentMemory.appointments.some((a) => a.what === what && a.when.toLowerCase() === day.toLowerCase());
+
+    if (!alreadySaved) {
+      pending.push({
+        id: `mem_appt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        category: 'appointments',
+        label: 'Commitment',
+        title: `${what} (${day})`,
+        detail: userText.slice(0, 120),
+        provenance: `Extracted from chat on ${new Date().toLocaleDateString()}`,
+        payload: {
+          what,
+          when: day,
+          notes: userText.slice(0, 120),
+          createdAt: new Date().toISOString()
+        }
+      });
+    }
+  }
+
+  // 5. Health & Medication Care
+  if (textLower.includes('medication') || textLower.includes('prescription') || textLower.includes('therapy session') || textLower.includes('adhd diagnosis')) {
+    const event = textLower.includes('therapy') ? 'Therapy' : textLower.includes('medication') ? 'Medication' : 'Health / Care';
+    pending.push({
+      id: `mem_health_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      category: 'health',
+      label: 'Health & Care',
+      title: event,
+      detail: userText.slice(0, 120),
+      provenance: `Recorded with your consent on ${new Date().toLocaleDateString()}`,
+      payload: {
+        event,
+        detail: userText.slice(0, 140),
+        date: new Date().toISOString().split('T')[0],
+        recordedAt: new Date().toISOString()
+      }
+    });
+  }
+
+  return pending;
+}
+
+/**
+ * Confirms and commits a pending memory item into the user's permanent Memory Vault
+ * @param {string} uid 
+ * @param {object} item - { category, payload }
+ * @returns {Promise<object>} Updated memory profile
+ */
+export async function confirmMemoryItem(uid, item) {
+  if (!uid || !item || !item.category || !item.payload) {
+    throw new Error('Valid memory item with category and payload is required.');
+  }
+
+  const memory = await getUserMemory(uid);
+  if (!Array.isArray(memory[item.category])) {
+    memory[item.category] = [];
+  }
+
+  // Stamp confirmed timestamp
+  const payloadWithMeta = {
+    ...item.payload,
+    confirmedAt: new Date().toISOString()
+  };
+
+  memory[item.category].push(payloadWithMeta);
+  memory.updatedAt = new Date().toISOString();
+
+  await saveDocument(uid, 'profile', 'memory', memory);
+  return memory;
+}
+
+/**
+ * Updates a specific memory item at index
+ * @param {string} uid 
+ * @param {string} category 
+ * @param {number} index 
+ * @param {object} updatedData 
+ * @returns {Promise<object>} Updated memory
+ */
+export async function updateMemoryItem(uid, category, index, updatedData) {
+  if (!uid) return getDefaultMemory();
+  const memory = await getUserMemory(uid);
+
+  if (Array.isArray(memory[category]) && index >= 0 && index < memory[category].length) {
+    memory[category][index] = {
+      ...memory[category][index],
+      ...updatedData,
+      updatedAt: new Date().toISOString()
+    };
+    memory.updatedAt = new Date().toISOString();
+    await saveDocument(uid, 'profile', 'memory', memory);
+  }
+
+  return memory;
+}
+
+/**
+ * Saves a custom memory item manually entered by the user
+ * @param {string} uid 
+ * @param {string} category 
+ * @param {object} itemData 
+ * @returns {Promise<object>} Updated memory
+ */
+export async function saveCustomMemoryItem(uid, category, itemData) {
+  if (!uid || !category || !itemData) {
+    throw new Error('Category and item data required');
+  }
+
+  const memory = await getUserMemory(uid);
+  if (!Array.isArray(memory[category])) {
+    memory[category] = [];
+  }
+
+  memory[category].push({
+    ...itemData,
+    provenance: 'Manually saved in Memory Vault',
+    createdAt: new Date().toISOString()
+  });
+
+  memory.updatedAt = new Date().toISOString();
+  await saveDocument(uid, 'profile', 'memory', memory);
+  return memory;
+}
+

@@ -12,6 +12,17 @@ import { bulletJournalAgent } from '../agents/bulletJournalAgent.js';
 import { richaCoreJournalAgent } from '../agents/richaCoreJournalAgent.js';
 import { saveDocument } from '../utils/firestoreHelper.js';
 
+export const ALL_AGENT_METADATA = [
+  { id: 'companion', label: 'RICHA Companion', intent: 'journal_entry', desc: 'Active listening, conversational memory, voice diary' },
+  { id: 'planner', label: 'Planner Agent', intent: 'planning_request', desc: 'Executive function scaffolding, micro-steps, time blindness' },
+  { id: 'prioritizer', label: '4D Prioritizer', intent: 'review_request', desc: 'Julie Morgenstern 4D triage: Delete, Delay, Diminish, Delegate' },
+  { id: 'wellbeing', label: 'Sensory Shield', intent: 'burnout_signal', desc: 'Acute sensory decompression, soothing anchors, zero clutter' },
+  { id: 'braindump', label: 'Bullet Log', intent: 'brain_dump', desc: 'Rapid bullet journaling, brain dump synthesis, daily spread' },
+  { id: 'kanban', label: 'Kanban & Habits', intent: 'kanban_update', desc: 'WIP limit protection, stagnation detection, habit tracking' },
+  { id: 'admin', label: 'Life Admin', intent: 'admin_setup', desc: 'Errand routines, recurring chores, buffer blocks' },
+  { id: 'reflection', label: 'Reflection & Insight', intent: 'emotional_reflection', desc: 'Deeper emotional synthesis, celebrating wins, mood processing' }
+];
+
 /**
  * Routes classified intent and user payload to the designated specialized agent(s).
  * Supports multi-agent sequential chaining for compound neurodivergent needs.
@@ -21,14 +32,27 @@ import { saveDocument } from '../utils/firestoreHelper.js';
  * @param {string} uid - Verified UID from auth token
  * @param {string} sessionId - Conversation session identifier
  * @param {string} [provider='gemini'] - AI provider
- * @param {object} [options={}] - Options like voiceMode and history
- * @returns {Promise<{ reply: string, agentName: string, intent: string, metadata: object }>}
+ * @param {object} [options={}] - Options like voiceMode, verbosity, overrideAgent, and history
+ * @returns {Promise<{ reply: string, agentName: string, intent: string, confidence: number, metadata: object }>}
  */
 export async function routeToAgents(classification, userContent, uid, sessionId, provider = 'gemini', options = {}) {
-  const { intent, burnoutDetected, perfectionismDetected } = classification;
+  let { intent, confidence = 0.85, burnoutDetected, perfectionismDetected, isBlended, secondaryIntent, lowConfidence, isFastPathSensory } = classification;
   const history = options.history || [];
+  const textToProcess = classification.cleanCommandText || userContent;
 
-  // Route test suite verification handler
+  // 1. User-Initiated Agent Override (Dimension 1 & 2: 1-click re-routing and manual agent selection)
+  if (options.overrideAgent) {
+    const matched = ALL_AGENT_METADATA.find(a => a.id === options.overrideAgent);
+    if (matched) {
+      intent = matched.intent;
+      confidence = 1.0;
+      lowConfidence = false;
+      isBlended = false;
+      console.info(`[AgentRouter] User explicit override to agent: ${matched.label} (${intent})`);
+    }
+  }
+
+  // 2. Route test suite verification handler
   if (intent === 'route_test_suite') {
     const routeResults = `### 🧭 RICHA Multi-Agent Route Verification Test
 
@@ -65,25 +89,85 @@ Here is the exact routing classification for each test query:
       reply: routeResults,
       agentName: 'RICHA Orchestrator',
       intent: 'route_test_suite',
-      metadata: { suiteVerified: true }
+      confidence: 1.0,
+      metadata: { suiteVerified: true, availableReroutes: ALL_AGENT_METADATA }
     };
   }
 
-  // Unsafe prompt injection interceptor (OWASP LLM01 / Security Directive)
+  // 3. Unsafe prompt injection interceptor (OWASP LLM01 / Security Directive)
   if (intent === 'unsafe_input') {
     return {
       reply: "I'm here whenever you want to talk.",
       agentName: 'RICHA Companion',
       intent: 'unsafe_input',
-      metadata: { securityBlocked: true }
+      confidence: 1.0,
+      metadata: { securityBlocked: true, availableReroutes: ALL_AGENT_METADATA }
     };
   }
 
-  // Priority Chaining: When severe burnout is detected alongside another task request
+  // 4. Low-Confidence Classification Fork Handling (Dimension 1)
+  if (lowConfidence && !options.overrideAgent && textToProcess.trim().split(' ').length <= 4) {
+    const disambiguationReply = `I'm listening closely. To help you best right now without adding mental noise, what do you need most?
+
+* **Talk & Process**: Vent, unload thoughts, or reflect on how you're feeling.
+* **Micro-Step Plan**: Break down a stuck task into tiny, zero-pressure steps.
+* **Triage & Purge**: Delete or postpone tasks that are piling up.
+* **Sensory Reset**: Turn down the stimulation and take a peaceful pause.`;
+
+    return {
+      reply: disambiguationReply,
+      agentName: 'RICHA Companion',
+      intent: 'low_confidence_disambiguation',
+      confidence,
+      metadata: {
+        isDisambiguation: true,
+        forkOptions: [
+          { agentId: 'companion', label: 'Talk & Process', command: '/reflect' },
+          { agentId: 'planner', label: 'Micro-Step Plan', command: '/plan' },
+          { agentId: 'prioritizer', label: 'Triage & Purge', command: '/triage' },
+          { agentId: 'wellbeing', label: 'Sensory Reset', command: '/shield' }
+        ],
+        availableReroutes: ALL_AGENT_METADATA
+      }
+    };
+  }
+
+  // 5. Blended Responses: Emotional Support + Scaffolded Action (Dimension 1)
+  if (isBlended && secondaryIntent) {
+    console.info(`[AgentRouter] Blended intent triggered: emotional support + ${secondaryIntent}`);
+    const emotionalRes = await richaCoreJournalAgent(textToProcess, uid, history, provider, options);
+    const actionRes = await executeSingleAgent(secondaryIntent, textToProcess, uid, history, provider, options);
+
+    const blendedReply = `${emotionalRes.responseText}
+
+---
+
+### 🛠️ When You're Ready (Gentle Next Step):
+${actionRes.responseText}`;
+
+    return {
+      reply: blendedReply,
+      agentName: 'RICHA Companion & ' + actionRes.agent,
+      intent: 'blended_support',
+      confidence,
+      metadata: {
+        isBlended: true,
+        primaryAgent: 'RICHA Companion',
+        secondaryAgent: actionRes.agent,
+        handoffOffer: {
+          targetAgent: secondaryIntent === 'planning_request' ? 'planner' : 'prioritizer',
+          label: 'Continue in Planner'
+        },
+        availableReroutes: ALL_AGENT_METADATA
+      }
+    };
+  }
+
+  // 6. Acute Burnout Chaining: Sensory Shield + Task Organization
   if (burnoutDetected && intent !== 'burnout_signal') {
     console.info(`[AgentRouter] Burnout signal detected during ${intent}. Initiating Wellbeing + ${intent} multi-agent chain.`);
-    const wellbeingRes = await wellbeingAgent(userContent, uid, history, provider);
-    const secondaryRes = await executeSingleAgent(intent, userContent, uid, history, provider, options);
+    const wellbeingRes = await wellbeingAgent(textToProcess, uid, history, provider);
+    const secondaryRes = await executeSingleAgent(intent, textToProcess, uid, history, provider, options);
 
     const combinedReply = `${wellbeingRes.responseText}\n\n---\n\n### 🧩 Gentle Secondary Organization:\n${secondaryRes.responseText}`;
     
@@ -91,21 +175,48 @@ Here is the exact routing classification for each test query:
       reply: combinedReply,
       agentName: 'Wellbeing Agent & ' + secondaryRes.agent,
       intent,
+      confidence,
       metadata: {
         chained: true,
         primaryAgent: 'WellbeingAgent',
-        secondaryAgent: secondaryRes.agent
+        secondaryAgent: secondaryRes.agent,
+        isFastPathSensory,
+        availableReroutes: ALL_AGENT_METADATA
       }
     };
   }
 
-  // Standard single agent dispatch
-  const singleRes = await executeSingleAgent(intent, userContent, uid, history, provider, options);
+  // 7. Standard single agent dispatch with verbosity awareness
+  const singleRes = await executeSingleAgent(intent, textToProcess, uid, history, provider, options);
+
+  // Check if agent output suggests an explicit handoff opportunity
+  let handoffOffer = null;
+  const replyLower = (singleRes.responseText || '').toLowerCase();
+  if (intent === 'planning_request' && (replyLower.includes('too overwhelmed') || replyLower.includes('paralyzed'))) {
+    handoffOffer = {
+      targetAgent: 'wellbeing',
+      label: 'Switch to Sensory Shield',
+      prompt: 'Feeling stuck on planning? We can pause and do a 2-minute sensory decompression instead.'
+    };
+  } else if (intent === 'journal_entry' && replyLower.includes('so many things on your plate')) {
+    handoffOffer = {
+      targetAgent: 'prioritizer',
+      label: '4D Task Triage',
+      prompt: 'Would you like to triage and eliminate non-essential tasks from your plate?'
+    };
+  }
+
   return {
     reply: singleRes.responseText,
     agentName: singleRes.agent,
     intent,
-    metadata: singleRes.metadata || {}
+    confidence,
+    metadata: {
+      ...(singleRes.metadata || {}),
+      handoffOffer,
+      isFastPathSensory: Boolean(isFastPathSensory),
+      availableReroutes: ALL_AGENT_METADATA
+    }
   };
 }
 
@@ -113,31 +224,40 @@ Here is the exact routing classification for each test query:
  * Dispatches to a specific agent function by intent name
  */
 async function executeSingleAgent(intent, userContent, uid, history, provider, options = {}) {
+  // Apply verbosity adjustment to content prompt if low battery mode is requested
+  let contentToSend = userContent;
+  if (options.verbosity === 'low') {
+    contentToSend = `${userContent}\n\n[USER PREFERENCE: Low Battery Mode active. Keep response under 2 short sentences. No introductory fluff or meta explanations.]`;
+  } else if (options.verbosity === 'deep') {
+    contentToSend = `${userContent}\n\n[USER PREFERENCE: Deep Processing Mode active. Provide thoughtful exploration, validating nuance and emotional context.]`;
+  }
+
   switch (intent) {
     case 'task_input':
     case 'planning_request':
-      return await plannerAgent(userContent, uid, history, provider);
+      return await plannerAgent(contentToSend, uid, history, provider);
 
     case 'review_request':
-      return await prioritizerAgent(userContent, uid, history, provider);
+      return await prioritizerAgent(contentToSend, uid, history, provider);
 
     case 'admin_setup':
     case 'date_reminder':
-      return await adminAgent(userContent, uid, history, provider);
+      return await adminAgent(contentToSend, uid, history, provider);
 
     case 'burnout_signal':
-      return await wellbeingAgent(userContent, uid, history, provider);
+      return await wellbeingAgent(contentToSend, uid, history, provider);
 
     case 'kanban_update':
     case 'habit_check':
-      return await kanbanAgent(userContent, uid, history, provider);
+      return await kanbanAgent(contentToSend, uid, history, provider);
 
     case 'brain_dump':
-      return await bulletJournalAgent(userContent, uid, history, provider);
+      return await bulletJournalAgent(contentToSend, uid, history, provider);
 
     case 'emotional_reflection':
     case 'journal_entry':
     default:
-      return await richaCoreJournalAgent(userContent, uid, history, provider, options);
+      return await richaCoreJournalAgent(contentToSend, uid, history, provider, options);
   }
 }
+

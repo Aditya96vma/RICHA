@@ -5,6 +5,15 @@
 import { validatePromptSafety } from '../utils/geminiHelper.js';
 
 /**
+ * Fast-path acute distress tokens (zero-tolerance, minimal false negatives)
+ */
+const FAST_PATH_SENSORY_PATTERNS = [
+  /\b(too\s+loud|lights\s+are\s+blinding|buzzing|overstimulated|sensory\s+overload|sensory\s+shutdown|autistic\s+burnout|shutting\s+down|meltdown|can'?t\s+breathe|stop\s+talking|everything\s+hurts|noise\s+hurts|screaming\s+in\s+my\s+head|too\s+much\s+noise|too\s+bright)\b/i,
+  /([a-zA-Z])\1{4,}/, // Frantic keyboard smashing (e.g., aaaaaa, stopstopstop)
+  /^(stop|no|help|too\s+much|quiet|dark)$/i // Single-word acute cry
+];
+
+/**
  * Acute neurodivergent sensory overload and burnout triggers that warrant immediate Sensory Shield activation
  */
 const ACUTE_BURNOUT_KEYWORDS = [
@@ -36,7 +45,34 @@ const EMOTIONAL_STRAIN_KEYWORDS = [
   'cant cope',
   'drained',
   'paralyzed',
-  'paralysed'
+  'paralysed',
+  'panicking',
+  'panic',
+  'anxious',
+  'anxiety',
+  'crying',
+  'fraud',
+  'impostor',
+  'ashamed',
+  'shame'
+];
+
+/**
+ * Task and backlog overwhelm patterns
+ */
+const TASK_BACKLOG_KEYWORDS = [
+  'emails',
+  'unread',
+  'inbox',
+  'tasks',
+  'deadline',
+  'todo',
+  'to-do',
+  'assignments',
+  'workload',
+  'tabs open',
+  'so much to do',
+  'behind on'
 ];
 
 /**
@@ -56,37 +92,100 @@ const PERFECTIONISM_PATTERNS = [
  * 
  * @param {string} userText - Raw user text input
  * @param {string} [contextHint] - Optional UI context hint (e.g., 'brain_dump', 'kanban')
- * @returns {{ intent: string, burnoutDetected: boolean, perfectionismDetected: boolean, triggerKeyword?: string }}
+ * @returns {{ intent: string, confidence: number, burnoutDetected: boolean, perfectionismDetected: boolean, isBlended?: boolean, secondaryIntent?: string, isFastPathSensory?: boolean, lowConfidence?: boolean, cleanCommandText?: string }}
  */
 export function classifyIntent(userText, contextHint = '') {
   if (typeof userText !== 'string' || !userText.trim()) {
-    return { intent: 'journal_entry', burnoutDetected: false, perfectionismDetected: false };
+    return { intent: 'journal_entry', confidence: 0.5, burnoutDetected: false, perfectionismDetected: false, lowConfidence: true };
   }
 
-  const lowerTextClean = userText.toLowerCase();
+  const trimmed = userText.trim();
+  const lowerTextClean = trimmed.toLowerCase();
 
   // Route test suite handler
   if (lowerTextClean.startsWith('route test:') || lowerTextClean.includes('classify each of these and tell me which agent handles it')) {
-    return { intent: 'route_test_suite', burnoutDetected: false, perfectionismDetected: false };
+    return { intent: 'route_test_suite', confidence: 1.0, burnoutDetected: false, perfectionismDetected: false };
   }
 
   // 1. SECURITY: Prompt Injection Check
   if (!validatePromptSafety(userText)) {
     return {
       intent: 'unsafe_input',
+      confidence: 1.0,
       burnoutDetected: false,
       perfectionismDetected: false
     };
   }
 
-  // Pre-calculate indicators
+  // 2. STANDALONE SLASH COMMAND INVOCATION (Priority 2)
+  if (trimmed.startsWith('/')) {
+    const parts = trimmed.split(' ');
+    const cmd = parts[0].toLowerCase();
+    const cleanCommandText = parts.slice(1).join(' ').trim();
+
+    if (cmd === '/plan') {
+      return { intent: 'planning_request', confidence: 1.0, burnoutDetected: false, perfectionismDetected: false, cleanCommandText };
+    }
+    if (cmd === '/triage' || cmd === '/4d' || cmd === '/prioritize') {
+      return { intent: 'review_request', confidence: 1.0, burnoutDetected: false, perfectionismDetected: false, cleanCommandText };
+    }
+    if (cmd === '/shield' || cmd === '/sensory' || cmd === '/reset') {
+      return { intent: 'burnout_signal', confidence: 1.0, burnoutDetected: true, isFastPathSensory: true, perfectionismDetected: false, cleanCommandText };
+    }
+    if (cmd === '/bujo' || cmd === '/dump' || cmd === '/braindump') {
+      return { intent: 'brain_dump', confidence: 1.0, burnoutDetected: false, perfectionismDetected: false, cleanCommandText };
+    }
+    if (cmd === '/admin' || cmd === '/chore') {
+      return { intent: 'admin_setup', confidence: 1.0, burnoutDetected: false, perfectionismDetected: false, cleanCommandText };
+    }
+    if (cmd === '/kanban') {
+      return { intent: 'kanban_update', confidence: 1.0, burnoutDetected: false, perfectionismDetected: false, cleanCommandText };
+    }
+    if (cmd === '/habits' || cmd === '/habit') {
+      return { intent: 'habit_check', confidence: 1.0, burnoutDetected: false, perfectionismDetected: false, cleanCommandText };
+    }
+    if (cmd === '/reflect' || cmd === '/vent') {
+      return { intent: 'emotional_reflection', confidence: 1.0, burnoutDetected: false, perfectionismDetected: false, cleanCommandText };
+    }
+    if (cmd === '/write' || cmd === '/diary' || cmd === '/journal') {
+      return { intent: 'journal_entry', confidence: 1.0, burnoutDetected: false, perfectionismDetected: false, cleanCommandText };
+    }
+  }
+
+  // 3. SENSORY SHIELD FAST-PATH TRIGGER (Priority 4 - Minimizing False Negatives)
+  const isFastPathSensory = FAST_PATH_SENSORY_PATTERNS.some((pat) => pat.test(userText));
   const matchedAcuteBurnout = ACUTE_BURNOUT_KEYWORDS.find((keyword) => lowerTextClean.includes(keyword));
+
+  if (isFastPathSensory || matchedAcuteBurnout) {
+    return {
+      intent: 'burnout_signal',
+      confidence: 0.98,
+      burnoutDetected: true,
+      isFastPathSensory: true,
+      perfectionismDetected: false,
+      triggerKeyword: matchedAcuteBurnout || 'acute_sensory_distress'
+    };
+  }
+
+  // Indicators
   const matchedStrain = EMOTIONAL_STRAIN_KEYWORDS.find((keyword) => lowerTextClean.includes(keyword));
+  const hasTaskBacklog = TASK_BACKLOG_KEYWORDS.some((keyword) => lowerTextClean.includes(keyword));
   const perfectionismDetected = PERFECTIONISM_PATTERNS.some((pat) => pat.test(userText));
 
-  // Check if this is an explicit journal write / diary generation request
+  // 4. HYBRID / BLENDED DETECTION (Priority 4 - Emotion + Actionable Next Steps)
+  if (matchedStrain && hasTaskBacklog) {
+    return {
+      intent: 'emotional_reflection',
+      secondaryIntent: 'planning_request',
+      isBlended: true,
+      confidence: 0.92,
+      burnoutDetected: false,
+      perfectionismDetected
+    };
+  }
+
+  // 5. Journal Write / Synthesis requests
   const isJournalWriteCommand =
-    lowerTextClean.startsWith('/write') ||
     lowerTextClean.includes('write my journal') ||
     lowerTextClean.includes('write a journal') ||
     lowerTextClean.includes('write the journal') ||
@@ -109,16 +208,16 @@ export function classifyIntent(userText, contextHint = '') {
     lowerTextClean.includes('produce journal') ||
     lowerTextClean.includes('save to journal');
 
-  // If user explicitly asks to write a journal entry, route to journal_entry
   if (isJournalWriteCommand) {
     return {
       intent: 'journal_entry',
-      burnoutDetected: Boolean(matchedAcuteBurnout),
+      confidence: 0.95,
+      burnoutDetected: false,
       perfectionismDetected
     };
   }
 
-  // 2. Morgenstern 4D Prioritizer Review (Task triage, delete/delay/diminish/delegate)
+  // 6. Morgenstern 4D Prioritizer Review
   if (
     lowerTextClean.includes('4d') ||
     lowerTextClean.includes('prioritize') ||
@@ -130,10 +229,10 @@ export function classifyIntent(userText, contextHint = '') {
     lowerTextClean.includes('delete delay diminish delegate') ||
     lowerTextClean.includes('which task should i do')
   ) {
-    return { intent: 'review_request', burnoutDetected: false, perfectionismDetected };
+    return { intent: 'review_request', confidence: 0.90, burnoutDetected: false, perfectionismDetected };
   }
 
-  // 3. Bullet Journal & Daily Log
+  // 7. Bullet Journal & Daily Log
   if (
     contextHint === 'brain_dump' ||
     lowerTextClean.startsWith('brain dump:') ||
@@ -143,10 +242,10 @@ export function classifyIntent(userText, contextHint = '') {
     lowerTextClean.includes('weekly spread') ||
     lowerTextClean.includes('bullet journal')
   ) {
-    return { intent: 'brain_dump', burnoutDetected: false, perfectionismDetected };
+    return { intent: 'brain_dump', confidence: 0.92, burnoutDetected: false, perfectionismDetected };
   }
 
-  // 4. Kanban & Habit State Updates
+  // 8. Kanban & Habit State Updates
   if (
     contextHint === 'kanban' ||
     lowerTextClean.includes('kanban') ||
@@ -156,10 +255,10 @@ export function classifyIntent(userText, contextHint = '') {
     lowerTextClean.includes('card to done') ||
     lowerTextClean.includes('stagnation')
   ) {
-    return { intent: 'kanban_update', burnoutDetected: false, perfectionismDetected };
+    return { intent: 'kanban_update', confidence: 0.90, burnoutDetected: false, perfectionismDetected };
   }
 
-  // 5. Admin & Life Orchestrator (Recurring blocks & dates)
+  // 9. Admin & Life Orchestrator
   if (
     lowerTextClean.includes('meal plan') ||
     lowerTextClean.includes('grocery') ||
@@ -170,10 +269,10 @@ export function classifyIntent(userText, contextHint = '') {
     lowerTextClean.includes('shopping routine') ||
     lowerTextClean.includes('admin routine')
   ) {
-    return { intent: 'admin_setup', burnoutDetected: false, perfectionismDetected };
+    return { intent: 'admin_setup', confidence: 0.88, burnoutDetected: false, perfectionismDetected };
   }
 
-  // 6. Dates & Anniversaries
+  // 10. Dates & Anniversaries
   if (
     lowerTextClean.includes('anniversary') ||
     lowerTextClean.includes('birthday') ||
@@ -182,10 +281,10 @@ export function classifyIntent(userText, contextHint = '') {
     lowerTextClean.includes('date reminder') ||
     lowerTextClean.includes('remember important dates')
   ) {
-    return { intent: 'date_reminder', burnoutDetected: false, perfectionismDetected };
+    return { intent: 'date_reminder', confidence: 0.88, burnoutDetected: false, perfectionismDetected };
   }
 
-  // 7. Habit Tracker & Hobby Management
+  // 11. Habit Tracker
   if (
     lowerTextClean.includes('habit') ||
     lowerTextClean.includes('streak') ||
@@ -195,10 +294,10 @@ export function classifyIntent(userText, contextHint = '') {
     lowerTextClean.includes('track some habits') ||
     lowerTextClean.includes('track my')
   ) {
-    return { intent: 'habit_check', burnoutDetected: false, perfectionismDetected };
+    return { intent: 'habit_check', confidence: 0.85, burnoutDetected: false, perfectionismDetected };
   }
 
-  // 8. Task & Planning (Paralysis, Time Blindness, Breakdowns)
+  // 12. Task & Planning (Paralysis, Time Blindness, Breakdowns)
   if (
     lowerTextClean.includes('plan my day') ||
     lowerTextClean.includes('break down') ||
@@ -215,24 +314,14 @@ export function classifyIntent(userText, contextHint = '') {
     lowerTextClean.includes('what do i do now') ||
     lowerTextClean.includes('freeze')
   ) {
-    return { intent: 'planning_request', burnoutDetected: false, perfectionismDetected };
+    return { intent: 'planning_request', confidence: 0.88, burnoutDetected: false, perfectionismDetected };
   }
 
   if (lowerTextClean.startsWith('task:') || lowerTextClean.startsWith('todo:')) {
-    return { intent: 'task_input', burnoutDetected: false, perfectionismDetected };
+    return { intent: 'task_input', confidence: 0.90, burnoutDetected: false, perfectionismDetected };
   }
 
-  // 9. Acute Sensory Overload & Shutdown (leads with sensory decompression)
-  if (matchedAcuteBurnout) {
-    return {
-      intent: 'burnout_signal',
-      burnoutDetected: true,
-      perfectionismDetected,
-      triggerKeyword: matchedAcuteBurnout
-    };
-  }
-
-  // 10. Emotional Reflection & Journaling
+  // 13. Emotional Reflection & Journaling
   if (
     lowerTextClean.includes('i feel') ||
     lowerTextClean.includes('feeling') ||
@@ -246,17 +335,20 @@ export function classifyIntent(userText, contextHint = '') {
     lowerTextClean.includes('summarise what') ||
     lowerTextClean.includes('signed in for the first time') ||
     lowerTextClean.includes('47 tabs are open') ||
-    lowerTextClean.includes('exhausted') ||
-    lowerTextClean.includes('overwhelmed') ||
-    lowerTextClean.includes('drained')
+    matchedStrain
   ) {
-    return { intent: 'emotional_reflection', burnoutDetected: false, perfectionismDetected };
+    return { intent: 'emotional_reflection', confidence: 0.82, burnoutDetected: false, perfectionismDetected };
   }
 
-  // Default to general journal entry
+  // Check if string is ambiguous or very short
+  const isAmbiguous = trimmed.split(' ').length <= 3 && !isJournalWriteCommand;
+
   return {
     intent: 'journal_entry',
+    confidence: isAmbiguous ? 0.45 : 0.70,
     burnoutDetected: false,
-    perfectionismDetected
+    perfectionismDetected,
+    lowConfidence: isAmbiguous
   };
 }
+

@@ -14,7 +14,14 @@ import {
   brainDumpSchema
 } from '../middleware/inputValidator.js';
 import { saveDocument, listDocuments, deleteDocument, getDocument } from '../utils/firestoreHelper.js';
-import { getUserMemory, forgetMemoryItem, clearAllMemories } from '../utils/memoryManager.js';
+import {
+  getUserMemory,
+  forgetMemoryItem,
+  clearAllMemories,
+  confirmMemoryItem,
+  updateMemoryItem,
+  saveCustomMemoryItem
+} from '../utils/memoryManager.js';
 
 const router = express.Router();
 
@@ -234,6 +241,79 @@ router.get('/export/all', async (req, res) => {
         habits
       }
     });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/data/profile/memory/confirm
+ * Confirms a pending memory receipt from chat into the permanent Memory Vault (Dimension 5)
+ */
+router.post('/profile/memory/confirm', async (req, res) => {
+  const uid = req.user.uid;
+  const { item } = req.body || {};
+
+  if (!item || !item.category || !item.payload) {
+    return res.status(400).json({ error: 'Valid memory item with category and payload is required.' });
+  }
+
+  try {
+    const memory = await confirmMemoryItem(uid, item);
+    return res.json({ success: true, memory });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PUT /api/data/profile/memory/:category/:index
+ * Updates a memory fact in place (Dimension 5: Provenance & Agency)
+ */
+router.put('/profile/memory/:category/:index', async (req, res) => {
+  const uid = req.user.uid;
+  const { category, index } = req.params;
+  const updatedData = req.body || {};
+
+  try {
+    const memory = await updateMemoryItem(uid, category, parseInt(index, 10), updatedData);
+    return res.json({ success: true, memory });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/data/profile/memory/custom
+ * Manually adds a user fact or sensory trigger to the Memory Vault
+ */
+router.post('/profile/memory/custom', async (req, res) => {
+  const uid = req.user.uid;
+  const { category, itemData } = req.body || {};
+
+  if (!category || !itemData) {
+    return res.status(400).json({ error: 'Category and itemData are required.' });
+  }
+
+  try {
+    const memory = await saveCustomMemoryItem(uid, category, itemData);
+    return res.json({ success: true, memory });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/data/timeline
+ * Fetches unified session events timeline (Dimension 3: Persistence Model)
+ */
+router.get('/timeline', async (req, res) => {
+  const uid = req.user.uid;
+  const limit = parseInt(req.query.limit, 10) || 50;
+
+  try {
+    const events = await listDocuments(uid, 'session_events', limit, 'timestamp', 'desc');
+    return res.json({ success: true, events });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

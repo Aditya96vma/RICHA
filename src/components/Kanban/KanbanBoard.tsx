@@ -16,7 +16,12 @@ import {
   Trash2,
   Flame,
   Layers,
-  Sparkles
+  Sparkles,
+  Pause,
+  Play,
+  ShieldAlert,
+  Zap,
+  X
 } from 'lucide-react';
 
 interface KanbanCard {
@@ -29,6 +34,8 @@ interface KanbanCard {
   estimatedMinutes?: number;
   enteredInProgressAt?: string | null;
   isStagnant?: boolean;
+  isBlocked?: boolean;
+  blockedReason?: string | null;
   createdAt?: string;
 }
 
@@ -55,6 +62,38 @@ export function KanbanBoard() {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedDomain, setSelectedDomain] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  
+  // Dimension 6 (Rigid Constraints): WIP Soft Gate & 2-Hour Capacity Override
+  const [wipOverrideUntil, setWipOverrideUntil] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('richa_wip_override');
+      return saved ? parseInt(saved, 10) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  const [softGateModal, setSoftGateModal] = useState<{
+    pendingCardId: string;
+    destColumn: KanbanCard['column'];
+  } | null>(null);
+
+  const isOverrideActive = Date.now() < wipOverrideUntil;
+
+  const handleActivateOverride = () => {
+    const twoHoursLater = Date.now() + 2 * 60 * 60 * 1000;
+    setWipOverrideUntil(twoHoursLater);
+    localStorage.setItem('richa_wip_override', twoHoursLater.toString());
+    if (softGateModal) {
+      executeMove(softGateModal.pendingCardId, softGateModal.destColumn);
+      setSoftGateModal(null);
+    }
+  };
+
+  const handleClearOverride = () => {
+    setWipOverrideUntil(0);
+    localStorage.removeItem('richa_wip_override');
+  };
   const [newCard, setNewCard] = useState<{
     title: string;
     description: string;
@@ -128,15 +167,7 @@ export function KanbanBoard() {
     }
   };
 
-  const handleMoveCard = async (cardId: string, destColumn: KanbanCard['column']) => {
-    // Check WIP limit on In Progress
-    if (destColumn === 'in_progress') {
-      const inProgressCount = cards.filter((c) => c.column === 'in_progress').length;
-      if (inProgressCount >= 2) {
-        alert('⚠️ WIP Limit Alert: Neurodivergent focus protection suggests working on max 2 items at once. Finish or delay an active item first!');
-      }
-    }
-
+  const executeMove = async (cardId: string, destColumn: KanbanCard['column']) => {
     try {
       const token = await getIdToken();
       const res = await fetch(`/api/kanban/${cardId}/move`, {
@@ -165,6 +196,59 @@ export function KanbanBoard() {
     } catch (e) {
       console.error('Failed to move card:', e);
     }
+  };
+
+  const handleMoveCard = async (cardId: string, destColumn: KanbanCard['column']) => {
+    // Dimension 6: Soft Gate instead of hard block/alert
+    if (destColumn === 'in_progress') {
+      const activeInProgress = cards.filter((c) => c.column === 'in_progress' && !c.isBlocked);
+      if (activeInProgress.length >= 2 && !isOverrideActive && !activeInProgress.some((c) => c.id === cardId)) {
+        setSoftGateModal({ pendingCardId: cardId, destColumn });
+        return;
+      }
+    }
+
+    await executeMove(cardId, destColumn);
+  };
+
+  const handleToggleBlock = async (card: KanbanCard) => {
+    try {
+      const token = await getIdToken();
+      const nextBlocked = !card.isBlocked;
+      const res = await fetch(`/api/kanban/${card.id}/block`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          isBlocked: nextBlocked,
+          blockedReason: nextBlocked ? 'Waiting on external input / reply' : null
+        })
+      });
+
+      if (res.ok) {
+        setCards((prev) =>
+          prev.map((c) => (c.id === card.id ? { ...c, isBlocked: nextBlocked, blockedReason: nextBlocked ? 'Waiting on external input' : null } : c))
+        );
+      }
+    } catch (e) {
+      console.error('Failed to toggle block status:', e);
+    }
+  };
+
+  const handleParkAndMove = async (cardToParkId: string) => {
+    if (!softGateModal) return;
+    await executeMove(cardToParkId, 'backlog');
+    await executeMove(softGateModal.pendingCardId, 'in_progress');
+    setSoftGateModal(null);
+  };
+
+  const handleBlockAndMove = async (cardToBlock: KanbanCard) => {
+    if (!softGateModal) return;
+    await handleToggleBlock(cardToBlock);
+    await executeMove(softGateModal.pendingCardId, 'in_progress');
+    setSoftGateModal(null);
   };
 
   const handleDeleteCard = async (cardId: string) => {
@@ -246,6 +330,29 @@ export function KanbanBoard() {
         </div>
       </div>
 
+      {/* Capacity Override Banner (Dimension 6: No Shame / Flexible Constraint) */}
+      {isOverrideActive && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-400 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[3px_3px_0px_0px_rgba(245,158,11,1)]">
+          <div className="flex items-center gap-2.5">
+            <Zap className="w-5 h-5 text-amber-600 animate-pulse shrink-0" />
+            <div>
+              <p className="text-xs font-black text-amber-950 uppercase tracking-wide">
+                ⚡ 2-Hour Capacity Override Active
+              </p>
+              <p className="text-xs text-amber-800 font-medium">
+                WIP limits are relaxed without penalty or guilt until {new Date(wipOverrideUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleClearOverride}
+            className="px-3 py-1.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold rounded-xl self-start sm:self-auto transition-all"
+          >
+            Reset Focus Mode
+          </button>
+        </div>
+      )}
+
       {/* Kanban Board Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {COLUMNS.map((col) => {
@@ -300,9 +407,17 @@ export function KanbanBoard() {
 
                       <h4 className="text-sm font-extrabold text-slate-900 leading-snug mb-1">{card.title}</h4>
                       {card.description && (
-                        <p className="text-xs text-slate-600 line-clamp-2 mb-3 leading-relaxed font-medium">
+                        <p className="text-xs text-slate-600 line-clamp-2 mb-2 leading-relaxed font-medium">
                           {card.description}
                         </p>
+                      )}
+
+                      {/* Blocked / Waiting on External Indicator */}
+                      {card.isBlocked && (
+                        <div className="mb-2.5 px-2.5 py-1 bg-purple-100 text-purple-950 border border-purple-300 rounded-lg text-[10px] font-extrabold flex items-center gap-1.5 shadow-[1px_1px_0px_0px_rgba(147,51,234,0.5)]">
+                          <Pause className="w-3 h-3 text-purple-700 shrink-0" />
+                          <span className="truncate">Waiting On: {card.blockedReason || 'External dependency'}</span>
+                        </div>
                       )}
 
                       {/* Card Actions & Column Movers */}
@@ -336,6 +451,19 @@ export function KanbanBoard() {
                               <ArrowRight className="w-3.5 h-3.5" />
                             </button>
                           )}
+
+                          {/* Blocked / Waiting Toggle */}
+                          <button
+                            onClick={() => handleToggleBlock(card)}
+                            title={card.isBlocked ? 'Resume task' : 'Mark as waiting on external reply / input'}
+                            className={`p-1 rounded-md border transition-colors ${
+                              card.isBlocked
+                                ? 'bg-purple-600 text-white border-purple-800'
+                                : 'hover:bg-slate-100 text-slate-600 border-slate-300'
+                            }`}
+                          >
+                            {card.isBlocked ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                          </button>
                         </div>
 
                         <button
@@ -468,6 +596,85 @@ export function KanbanBoard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* SOFT-GATE WIP MODAL (Dimension 6: Rigid Constraint Softening) */}
+      {softGateModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-[8px_8px_0px_0px_rgba(15,23,42,1)] border-3 border-slate-900">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-xl bg-amber-100 border-2 border-slate-900 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                  <ShieldAlert className="w-4 h-4 text-amber-700" />
+                </span>
+                <h3 className="text-base font-black text-slate-900 tracking-tight">Executive Bandwidth Check</h3>
+              </div>
+              <button
+                onClick={() => setSoftGateModal(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed font-medium mb-4">
+              You currently have 2 tasks active in progress. Multitasking often introduces cognitive friction, but <strong>you are in full control</strong>. What feels easiest right now?
+            </p>
+
+            {/* Currently Active In-Progress Cards */}
+            <div className="space-y-2.5 mb-5">
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-700">Currently in Progress:</p>
+              {cards
+                .filter((c) => c.column === 'in_progress' && !c.isBlocked)
+                .map((activeCard) => (
+                  <div
+                    key={activeCard.id}
+                    className="p-3 bg-slate-50 border-2 border-slate-900 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-extrabold text-slate-900 truncate">{activeCard.title}</p>
+                      <p className="text-[10px] text-slate-500 font-bold">{activeCard.estimatedMinutes || 25}m estimate</p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => handleParkAndMove(activeCard.id)}
+                        className="px-2.5 py-1 text-[11px] font-bold bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 rounded-lg transition-all"
+                        title="Park this back to Backlog so you can focus on the new task"
+                      >
+                        Park to Backlog
+                      </button>
+                      <button
+                        onClick={() => handleBlockAndMove(activeCard)}
+                        className="px-2.5 py-1 text-[11px] font-bold bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-300 rounded-lg transition-all"
+                        title="Exempt this from active WIP because you are waiting on someone else"
+                      >
+                        Mark Waiting On
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Third Alternative: 2-Hour Capacity Override (Zero Guilt) */}
+            <div className="pt-3 border-t-2 border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <button
+                onClick={handleActivateOverride}
+                className="w-full sm:w-auto px-4 py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-950 text-xs font-extrabold rounded-xl border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] transition-all flex items-center justify-center gap-1.5"
+              >
+                <Zap className="w-4 h-4 text-slate-900" />
+                <span>⚡ 2-Hour Capacity Override (No Penalty)</span>
+              </button>
+
+              <button
+                onClick={() => setSoftGateModal(null)}
+                className="text-xs font-bold text-slate-500 hover:text-slate-800"
+              >
+                Cancel Move
+              </button>
+            </div>
           </div>
         </div>
       )}

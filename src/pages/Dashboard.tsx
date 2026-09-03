@@ -107,7 +107,18 @@ export function Dashboard({ onLogout }: DashboardProps) {
           </div>
 
           {/* User Profile & Mode Indicator */}
-          <div className="flex items-center gap-4 border-l border-slate-200 pl-4 sm:pl-6">
+          <div className="flex items-center gap-3 border-l border-slate-200 pl-3 sm:pl-5">
+            {/* Sensory Shield Fast Action Trigger (Dimension 2) */}
+            <button
+              id="dashboard-shield-btn"
+              onClick={() => setActiveTab('wellbeing')}
+              className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-lg border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
+              title="Fast-path Sensory Shield & Overwhelm Protection"
+            >
+              <ShieldCheck className="w-4 h-4 text-white" />
+              <span className="hidden md:inline">🛡️ Sensory Shield</span>
+            </button>
+
             <div className="text-right hidden sm:block">
               <p className="text-xs font-extrabold text-slate-900 tracking-tight">
                 {user?.displayName || user?.email || 'Alex Sterling'}
