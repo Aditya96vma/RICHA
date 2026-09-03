@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(firebaseUser);
       } else {
         // If not logged in and no demo user
-        const demo = localStorage.getItem('aria_demo_user');
+        const demo = localStorage.getItem('richa_demo_user') || localStorage.getItem('aria_demo_user');
         if (demo) {
           setUser(JSON.parse(demo));
         } else {
@@ -49,12 +49,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user && user.uid) {
       return `dev-token-${user.uid}`;
     }
-    return 'dev-token-aria-demo-user';
+    return 'dev-token-richa-demo-user';
   };
 
   const loginWithGoogle = async () => {
     setLoading(true);
     try {
+      localStorage.removeItem('richa_demo_user');
       localStorage.removeItem('aria_demo_user');
       const fbUser = await signInWithGoogle();
       setUser(fbUser);
@@ -66,16 +67,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginAsDemoUser = () => {
     const demoUser = {
       uid: 'neurodivergent-explorer',
-      email: 'alex.rivera@aria.neuro',
+      email: 'alex.rivera@richa.neuro',
       displayName: 'Alex Rivera',
       photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
       isDemo: true
     };
-    localStorage.setItem('aria_demo_user', JSON.stringify(demoUser));
+    localStorage.setItem('richa_demo_user', JSON.stringify(demoUser));
     setUser(demoUser);
   };
 
   const logout = async () => {
+    localStorage.removeItem('richa_demo_user');
     localStorage.removeItem('aria_demo_user');
     setUser(null);
     try {

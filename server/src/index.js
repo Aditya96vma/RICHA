@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import chatRouter from './routes/chat.js';
 import kanbanRouter from './routes/kanban.js';
 import dataRouter from './routes/data.js';
+import { getCandidateApiKeys } from './utils/geminiHelper.js';
 
 export function createServerApp() {
   const app = express();
@@ -49,14 +50,15 @@ export function createServerApp() {
 
   // Diagnostic status endpoint for debugging Gemini API and Firebase integration
   app.get('/api/diagnostic', (req, res) => {
-    const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim().length > 5);
+    const candidateKeys = getCandidateApiKeys();
+    const hasGeminiKey = candidateKeys.length > 0;
     res.status(200).json({
       geminiKeyConfigured: hasGeminiKey,
-      apiProvider: process.env.API_PROVIDER || 'gemini',
+      apiProvider: process.env.API_PROVIDER ? 'configured' : 'gemini',
       host: req.headers.host || '',
       protocol: req.protocol,
       origin: req.headers.origin || `${req.protocol}://${req.headers.host}`,
-      firebaseProjectId: process.env.GOOGLE_CLOUD_PROJECT || 'aria-executive-function'
+      firebaseProjectId: process.env.GOOGLE_CLOUD_PROJECT || 'richa-executive-function'
     });
   });
 

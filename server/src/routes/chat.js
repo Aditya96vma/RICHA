@@ -69,7 +69,8 @@ router.post('/', verifyFirebaseToken, validateRequest(chatMessageSchema), async 
       reply: agentResult.reply,
       agentName: agentResult.agentName,
       intent: agentResult.intent,
-      timestamp
+      timestamp,
+      metadata: agentResult.metadata || {}
     });
 
   } catch (err) {

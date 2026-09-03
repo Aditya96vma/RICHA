@@ -9,7 +9,7 @@ import { wellbeingAgent } from '../agents/wellbeingAgent.js';
 import { reflectionAgent } from '../agents/reflectionAgent.js';
 import { kanbanAgent } from '../agents/kanbanAgent.js';
 import { bulletJournalAgent } from '../agents/bulletJournalAgent.js';
-import { ariaCoreJournalAgent } from '../agents/ariaCoreJournalAgent.js';
+import { richaCoreJournalAgent } from '../agents/richaCoreJournalAgent.js';
 import { saveDocument } from '../utils/firestoreHelper.js';
 
 /**
@@ -138,6 +138,6 @@ async function executeSingleAgent(intent, userContent, uid, history, provider, o
     case 'emotional_reflection':
     case 'journal_entry':
     default:
-      return await ariaCoreJournalAgent(userContent, uid, history, provider, options);
+      return await richaCoreJournalAgent(userContent, uid, history, provider, options);
   }
 }

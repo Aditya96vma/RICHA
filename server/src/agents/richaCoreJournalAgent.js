@@ -1,4 +1,4 @@
-// FILE: server/src/agents/ariaCoreJournalAgent.js
+// FILE: server/src/agents/richaCoreJournalAgent.js
 // SECURITY: Directive 2 (OWASP LLM01, LLM02, LLM05), Directive 3 (User Isolation), Directive 6.4 (Persistence)
 // AGENT: RICHA Conversational Journaling Companion & Auto-Journal Engine
 
@@ -57,7 +57,7 @@ SECURITY RULES (NEVER OVERRIDE):
  * @param {object} [options={}] - Options including voiceMode
  * @returns {Promise<{ agent: string, responseText: string, metadata: object }>}
  */
-export async function ariaCoreJournalAgent(userContent, uid, history = [], provider = 'gemini', options = {}) {
+export async function richaCoreJournalAgent(userContent, uid, history = [], provider = 'gemini', options = {}) {
   const isVoiceMode = Boolean(options.voiceMode);
   const textLower = userContent.toLowerCase().trim();
 
@@ -614,3 +614,7 @@ function getConversationalFallback(userText) {
 
   return `I hear you. When you say "${userText.slice(0, 60)}${userText.length > 60 ? '...' : ''}", how is that sitting with you right now?`;
 }
+
+// Backwards-compatible alias for any legacy references
+export const ariaCoreJournalAgent = richaCoreJournalAgent;
+

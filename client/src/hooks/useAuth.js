@@ -33,7 +33,7 @@ export function useAuth() {
     if (user && user.uid) {
       return `dev-token-${user.uid}`;
     }
-    return 'dev-token-aria-demo-user';
+    return 'dev-token-richa-demo-user';
   };
 
   const loginWithGoogle = async () => {
@@ -42,6 +42,7 @@ export function useAuth() {
   };
 
   const logout = async () => {
+    localStorage.removeItem('richa_demo_user');
     localStorage.removeItem('aria_demo_user');
     await signOutUser();
     setUser(null);

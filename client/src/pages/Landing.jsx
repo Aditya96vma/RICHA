@@ -24,7 +24,7 @@ export function Landing({ onNavigateToDashboard }) {
         <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mx-auto mb-4 shadow-lg">
           <Brain className="w-7 h-7" />
         </div>
-        <h1 className="text-4xl font-extrabold text-slate-950 mb-3">ARIA Executive Function Journal</h1>
+        <h1 className="text-4xl font-extrabold text-slate-950 mb-3">RICHA Executive Function Journal</h1>
         <p className="text-slate-600 max-w-xl mx-auto mb-8">
           Multi-agent orchestration designed specifically for ADHD, Autism, and Executive Dysfunction.
         </p>

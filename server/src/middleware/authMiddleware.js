@@ -14,14 +14,14 @@ function getAdminAuth() {
         admin.initializeApp();
       } else {
         admin.initializeApp({
-          projectId: 'aria-executive-function'
+          projectId: process.env.GOOGLE_CLOUD_PROJECT || 'richa-executive-function'
         });
       }
     } catch (err) {
       if (admin.apps.length === 0) {
         try {
           admin.initializeApp({
-            projectId: 'aria-executive-function'
+            projectId: process.env.GOOGLE_CLOUD_PROJECT || 'richa-executive-function'
           });
         } catch (innerErr) {
           console.warn('[AuthMiddleware] Firebase Admin fallback initialization notice:', innerErr.message);
@@ -50,12 +50,12 @@ export async function verifyFirebaseToken(req, res, next) {
 
   // Test and Dev mock token support for local development environments
   if (token.startsWith('dev-token-') || token.startsWith('demo-token-')) {
-    const rawUid = token.replace(/^(dev-token-|demo-token-)/, '') || 'aria-demo-user';
+    const rawUid = token.replace(/^(dev-token-|demo-token-)/, '') || 'richa-demo-user';
     // SECURITY: Sanitize UID format
-    const sanitizedUid = rawUid.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || 'aria-demo-user';
+    const sanitizedUid = rawUid.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || 'richa-demo-user';
     req.user = {
       uid: sanitizedUid,
-      email: `${sanitizedUid}@aria.local`,
+      email: `${sanitizedUid}@richa.local`,
       isDev: true
     };
     return next();

@@ -14,8 +14,8 @@ export function ReflectionChat() {
     {
       id: 'welcome',
       sender: 'assistant',
-      text: "Welcome to ARIA. Share how you are feeling, drop a brain dump, or ask me to break down an overwhelming task.",
-      agentName: 'ARIA Orchestrator',
+      text: "Welcome to RICHA. Share how you are feeling, drop a brain dump, or ask me to break down an overwhelming task.",
+      agentName: 'RICHA Orchestrator',
       timestamp: 'Now'
     }
   ]);
@@ -78,7 +78,7 @@ export function ReflectionChat() {
       <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
         <h3 className="font-bold text-slate-900 flex items-center gap-2">
           <Bot className="w-5 h-5 text-indigo-600" />
-          <span>ARIA Multi-Agent Reflection</span>
+          <span>RICHA Multi-Agent Reflection</span>
         </h3>
       </div>
 
@@ -93,14 +93,14 @@ export function ReflectionChat() {
           <div key={msg.id} className={`flex gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`p-3.5 rounded-2xl max-w-xl text-sm ${msg.sender === 'user' ? 'bg-indigo-600 text-white' : 'bg-slate-50 border border-slate-200 text-slate-800'}`}>
               {msg.sender === 'assistant' ? (
-                <div dangerouslySetInnerHTML={{ __html: sanitizeHTML(msg.text) }} />
+                 <div dangerouslySetInnerHTML={{ __html: sanitizeHTML(msg.text) }} />
               ) : (
                 <p>{msg.text}</p>
               )}
             </div>
           </div>
         ))}
-        {loading && <div className="text-xs text-slate-500 italic">ARIA is analyzing and routing...</div>}
+        {loading && <div className="text-xs text-slate-500 italic">RICHA is analyzing and routing...</div>}
         <div ref={bottomRef} />
       </div>
 

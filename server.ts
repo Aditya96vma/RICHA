@@ -30,11 +30,11 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[ARIA Server] Server running on http://0.0.0.0:${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+    console.log(`[RICHA Server] Server running on http://0.0.0.0:${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
   });
 }
 
 startServer().catch((err) => {
-  console.error('[ARIA Server] Fatal startup error:', err);
+  console.error('[RICHA Server] Fatal startup error:', err);
   process.exit(1);
 });

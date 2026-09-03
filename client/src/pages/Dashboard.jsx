@@ -22,7 +22,7 @@ export function Dashboard({ onLogout }) {
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Brain className="w-6 h-6 text-indigo-600" />
-          <span className="font-extrabold text-slate-900">ARIA Executive Function Hub</span>
+          <span className="font-extrabold text-slate-900">RICHA Executive Function Hub</span>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-slate-500">{user?.displayName || user?.email || 'Guest'}</span>

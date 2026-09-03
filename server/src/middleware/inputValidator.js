@@ -19,10 +19,24 @@ export const chatMessageSchema = z.object({
     longitude: z.number().min(-180).max(180).optional(),
     city: z.string().max(100).optional()
   }).optional(),
-  history: z.array(z.object({
-    sender: z.string().max(32),
-    text: z.string().max(8000)
-  })).optional().default([]),
+  history: z.array(z.union([
+    z.object({
+      sender: z.string().max(32),
+      text: z.string().max(8000)
+    }),
+    z.object({
+      role: z.string().max(32),
+      content: z.string().max(8000)
+    }).transform(m => ({ sender: m.role, text: m.content })),
+    z.object({
+      role: z.string().max(32),
+      text: z.string().max(8000)
+    }).transform(m => ({ sender: m.role, text: m.text })),
+    z.object({
+      sender: z.string().max(32),
+      content: z.string().max(8000)
+    }).transform(m => ({ sender: m.sender, text: m.content }))
+  ])).optional().default([]),
   clientTimestamp: z.string().max(64).optional()
 }).transform((data) => ({
   content: (data.content || data.message || '').trim(),

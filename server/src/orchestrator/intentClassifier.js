@@ -5,28 +5,38 @@
 import { validatePromptSafety } from '../utils/geminiHelper.js';
 
 /**
- * Neurodivergent burnout keywords to monitor with priority
+ * Acute neurodivergent sensory overload and burnout triggers that warrant immediate Sensory Shield activation
  */
-const BURNOUT_KEYWORDS = [
+const ACUTE_BURNOUT_KEYWORDS = [
+  'sensory overload',
+  'sensory shutdown',
+  'autistic burnout',
+  'burnout shield',
+  'sensory reset',
+  'meltdown',
+  'head is buzzing',
+  'lights are overwhelming',
+  'overstimulated',
+  'burnt out and numb',
+  'burned out and numb',
+  'completely burnt out',
+  'burnout protocol',
+  'sensory decompression',
+  'shutting down completely',
+  'total shutdown'
+];
+
+/**
+ * General emotional strain words tracked for context
+ */
+const EMOTIONAL_STRAIN_KEYWORDS = [
   'exhausted',
   'overwhelmed',
   "can't cope",
   'cant cope',
-  'too much',
-  'shutdown',
-  'numb',
   'drained',
-  'sensory overload',
-  'nothing is working',
-  'constant demands',
   'paralyzed',
-  'paralysed',
-  'burned out',
-  'burnt out',
-  'burnout',
-  'crying',
-  'cant focus',
-  "can't focus"
+  'paralysed'
 ];
 
 /**
@@ -69,8 +79,9 @@ export function classifyIntent(userText, contextHint = '') {
     };
   }
 
-  // Pre-calculate burnout and perfectionism indicators
-  const matchedBurnout = BURNOUT_KEYWORDS.find((keyword) => lowerTextClean.includes(keyword));
+  // Pre-calculate indicators
+  const matchedAcuteBurnout = ACUTE_BURNOUT_KEYWORDS.find((keyword) => lowerTextClean.includes(keyword));
+  const matchedStrain = EMOTIONAL_STRAIN_KEYWORDS.find((keyword) => lowerTextClean.includes(keyword));
   const perfectionismDetected = PERFECTIONISM_PATTERNS.some((pat) => pat.test(userText));
 
   // Check if this is an explicit journal write / diary generation request
@@ -102,20 +113,24 @@ export function classifyIntent(userText, contextHint = '') {
   if (isJournalWriteCommand) {
     return {
       intent: 'journal_entry',
-      burnoutDetected: Boolean(matchedBurnout),
+      burnoutDetected: Boolean(matchedAcuteBurnout),
       perfectionismDetected
     };
   }
 
-  // 2. High-priority Burnout Detection (leads with empathy, no task lists)
-  // Only trigger pure burnout if not explicitly asking for a review or daily log
-  if (matchedBurnout && !lowerTextClean.includes('review my to-do') && !lowerTextClean.includes('review my task')) {
-    return {
-      intent: 'burnout_signal',
-      burnoutDetected: true,
-      perfectionismDetected,
-      triggerKeyword: matchedBurnout
-    };
+  // 2. Morgenstern 4D Prioritizer Review (Task triage, delete/delay/diminish/delegate)
+  if (
+    lowerTextClean.includes('4d') ||
+    lowerTextClean.includes('prioritize') ||
+    lowerTextClean.includes('prioritise') ||
+    lowerTextClean.includes('review my to-do') ||
+    lowerTextClean.includes('review my task') ||
+    lowerTextClean.includes('too many tasks') ||
+    lowerTextClean.includes('deal with them without spending all day') ||
+    lowerTextClean.includes('delete delay diminish delegate') ||
+    lowerTextClean.includes('which task should i do')
+  ) {
+    return { intent: 'review_request', burnoutDetected: false, perfectionismDetected };
   }
 
   // 3. Bullet Journal & Daily Log
@@ -144,22 +159,7 @@ export function classifyIntent(userText, contextHint = '') {
     return { intent: 'kanban_update', burnoutDetected: false, perfectionismDetected };
   }
 
-  // 5. Morgenstern 4D Prioritizer Review
-  if (
-    lowerTextClean.includes('4d') ||
-    lowerTextClean.includes('prioritize') ||
-    lowerTextClean.includes('prioritise') ||
-    lowerTextClean.includes('review my to-do') ||
-    lowerTextClean.includes('review my task') ||
-    lowerTextClean.includes('too many tasks') ||
-    lowerTextClean.includes('deal with them without spending all day') ||
-    lowerTextClean.includes('delete delay diminish delegate') ||
-    lowerTextClean.includes('which task should i do')
-  ) {
-    return { intent: 'review_request', burnoutDetected: false, perfectionismDetected };
-  }
-
-  // 6. Admin & Life Orchestrator (Recurring blocks & dates)
+  // 5. Admin & Life Orchestrator (Recurring blocks & dates)
   if (
     lowerTextClean.includes('meal plan') ||
     lowerTextClean.includes('grocery') ||
@@ -173,7 +173,7 @@ export function classifyIntent(userText, contextHint = '') {
     return { intent: 'admin_setup', burnoutDetected: false, perfectionismDetected };
   }
 
-  // 7. Dates & Anniversaries
+  // 6. Dates & Anniversaries
   if (
     lowerTextClean.includes('anniversary') ||
     lowerTextClean.includes('birthday') ||
@@ -185,7 +185,7 @@ export function classifyIntent(userText, contextHint = '') {
     return { intent: 'date_reminder', burnoutDetected: false, perfectionismDetected };
   }
 
-  // 8. Habit Tracker & Hobby Management
+  // 7. Habit Tracker & Hobby Management
   if (
     lowerTextClean.includes('habit') ||
     lowerTextClean.includes('streak') ||
@@ -198,7 +198,7 @@ export function classifyIntent(userText, contextHint = '') {
     return { intent: 'habit_check', burnoutDetected: false, perfectionismDetected };
   }
 
-  // 9. Task & Planning (Paralysis, Time Blindness, Breakdowns)
+  // 8. Task & Planning (Paralysis, Time Blindness, Breakdowns)
   if (
     lowerTextClean.includes('plan my day') ||
     lowerTextClean.includes('break down') ||
@@ -222,6 +222,16 @@ export function classifyIntent(userText, contextHint = '') {
     return { intent: 'task_input', burnoutDetected: false, perfectionismDetected };
   }
 
+  // 9. Acute Sensory Overload & Shutdown (leads with sensory decompression)
+  if (matchedAcuteBurnout) {
+    return {
+      intent: 'burnout_signal',
+      burnoutDetected: true,
+      perfectionismDetected,
+      triggerKeyword: matchedAcuteBurnout
+    };
+  }
+
   // 10. Emotional Reflection & Journaling
   if (
     lowerTextClean.includes('i feel') ||
@@ -235,7 +245,10 @@ export function classifyIntent(userText, contextHint = '') {
     lowerTextClean.includes('humiliated') ||
     lowerTextClean.includes('summarise what') ||
     lowerTextClean.includes('signed in for the first time') ||
-    lowerTextClean.includes('47 tabs are open')
+    lowerTextClean.includes('47 tabs are open') ||
+    lowerTextClean.includes('exhausted') ||
+    lowerTextClean.includes('overwhelmed') ||
+    lowerTextClean.includes('drained')
   ) {
     return { intent: 'emotional_reflection', burnoutDetected: false, perfectionismDetected };
   }
