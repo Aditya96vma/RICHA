@@ -1,26 +1,26 @@
-# ARIA — Adaptive Reasoning & Insight Assistant
+# RICHA (Reflective Insight & Cognitive Helper Assistant)
 ### Executive Function Externalisation Journal for Neurodivergent Minds
 
-ARIA is a production-grade, multi-agent full-stack web application designed to externalise and augment executive function for individuals navigating ADHD, Autism, and Executive Dysfunction.
+RICHA is a production-grade, multi-agent full-stack web application designed to externalise and augment executive function for individuals navigating ADHD, Autism, and Executive Dysfunction.
 
 ---
 
 ## 🏛️ Dual-Platform Architecture Overview
 
-ARIA is built with a **configurable, vendor-agnostic architecture**:
+RICHA is built with a **configurable, vendor-agnostic architecture**:
 - **Primary Platform (Zero GCP Requirement)**: Deployable directly to **Render** (or any Node.js host/container) requiring only a standard `GEMINI_API_KEY`.
 - **Optional Enterprise Platform**: Fully compatible with **Google Cloud Run**, **Google Cloud Secret Manager**, and **Cloud Firestore**.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    ARIA Client (React + Vite)               │
+│                    RICHA Client (React + Vite)               │
 │  - Bento Grid Neurodivergent UI                            │
 │  - Instant Sandbox Demo OR Federated Firebase Auth           │
 │  - Client DOMPurify Sanitization (OWASP LLM05)              │
 └──────────────────────────────┬──────────────────────────────┘
                                │ JSON / Bearer JWT
 ┌──────────────────────────────▼──────────────────────────────┐
-│             ARIA Backend API (Node.js + Express)            │
+│             RICHA Backend API (Node.js + Express)            │
 │  - Strict Body Parser Ordering (Directive 6.3)              │
 │  - Server-Side Agent Orchestrator & Intent Classifier       │
 │  - Prompt Delimitation: [USER_JOURNAL_DATA_START]           │
