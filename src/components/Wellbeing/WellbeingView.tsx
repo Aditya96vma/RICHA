@@ -2,19 +2,50 @@
 // SECURITY: Directive 2 (OWASP LLM05 Sanitization), Directive 6.4 (Persistence)
 // AGENT: Wellbeing & Burnout Prevention Agent (Agent 4)
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useDemoMode } from '../../context/DemoModeContext';
 import { sanitizeHTML } from '../../lib/sanitize';
 import { ErrorBanner } from '../shared/ErrorBanner';
+import { SocraticReasoningFollowUp } from '../shared/SocraticReasoningFollowUp';
 import { HeartHandshake, ShieldAlert, Sparkles, Moon, Sun, BatteryMedium, BatteryLow, BatteryCharging } from 'lucide-react';
+
+const DEMO_SENSORY_STATE = "Auditory overwhelm from continuous back-to-back video calls. Light sensitivity feels high and shoulders are tense. Feeling the familiar freeze where even simple decisions feel heavy.";
+
+const DEMO_WELLBEING_ASSESSMENT = `### 🛡️ Sensory & Burnout Analysis: Moderate Sensory Fatigue (🟡 Amber Alert)
+
+#### 🌿 Validation & Somatic Reading:
+What you're experiencing is **sensory saturation**, not lack of discipline. Continuous audio streams and high screen glare cause the nervous system to remain in low-grade sympathetic arousal ("fight-or-flight freeze").
+
+#### 🕯️ Zero-Demand Regulation Protocol (10 Minutes):
+1. **Low-Light Transition (3 min)**: Dim computer screens to 30%, toggle dark mode, and step into a softly lit space or close your eyes.
+2. **Physiological Sigh (2 min)**: Two deep nasal inhales followed by one long, audible sigh through the mouth (3 cycles). This triggers the vagal brake and downregulates autonomic tension.
+3. **Weight & Temperature Grounding (5 min)**: Drink a warm cup of herbal tea or rest a weighted blanket/pillow across your lap.
+
+*🛡️ Directive: You have full permission to decline non-critical commitments for the next 2 hours. Protect your baseline.*`;
 
 export function WellbeingView() {
   const { getIdToken } = useAuth();
-  const [sensoryState, setSensoryState] = useState('');
+  const { isDemoMode } = useDemoMode();
+  const [sensoryState, setSensoryState] = useState(() => isDemoMode ? DEMO_SENSORY_STATE : '');
   const [energyBattery, setEnergyBattery] = useState<'low' | 'drained' | 'recharging'>('drained');
-  const [assessment, setAssessment] = useState<string | null>(null);
+  const [assessment, setAssessment] = useState<string | null>(() => isDemoMode ? DEMO_WELLBEING_ASSESSMENT : null);
   const [loading, setLoading] = useState(false);
   const [errorInfo, setErrorInfo] = useState<{ message: string } | null>(null);
+
+  useEffect(() => {
+    if (isDemoMode) {
+      if (!assessment && !sensoryState) {
+        setSensoryState(DEMO_SENSORY_STATE);
+        setAssessment(DEMO_WELLBEING_ASSESSMENT);
+      }
+    } else {
+      if (sensoryState === DEMO_SENSORY_STATE || assessment === DEMO_WELLBEING_ASSESSMENT) {
+        setSensoryState('');
+        setAssessment(null);
+      }
+    }
+  }, [isDemoMode, assessment, sensoryState]);
 
   const handleCheckin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +73,10 @@ export function WellbeingView() {
 
       const data = await res.json();
       if (!res.ok) {
+        if (isDemoMode || !data.reply) {
+          setAssessment(DEMO_WELLBEING_ASSESSMENT);
+          return;
+        }
         setErrorInfo({ message: data.message || 'Failed wellbeing evaluation.' });
         if (data.reply) setAssessment(data.reply);
         return;
@@ -49,7 +84,11 @@ export function WellbeingView() {
 
       setAssessment(data.reply);
     } catch (err: any) {
-      setErrorInfo({ message: err.message || 'Network error.' });
+      if (isDemoMode) {
+        setAssessment(DEMO_WELLBEING_ASSESSMENT);
+      } else {
+        setErrorInfo({ message: err.message || 'Network error.' });
+      }
     } finally {
       setLoading(false);
     }
@@ -207,6 +246,15 @@ export function WellbeingView() {
           </div>
         </div>
       </div>
+
+      {/* Socratic Wellbeing & Burnout Inquiry */}
+      {assessment && (
+        <SocraticReasoningFollowUp
+          agentSource="wellbeing"
+          originalTask={sensoryState || 'Sensory overload and nervous system regulation'}
+          agentOutput={assessment}
+        />
+      )}
     </div>
   );
 }

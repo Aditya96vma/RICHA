@@ -4,11 +4,14 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useDemoMode } from '../../context/DemoModeContext';
 import {
   getUserStorageItem,
   setUserStorageItem,
-  removeUserStorageItem
+  removeUserStorageItem,
+  emitDataUpdated
 } from '../../utils/userStorage';
+import { SocraticReasoningFollowUp } from '../shared/SocraticReasoningFollowUp';
 import {
   Plus,
   Clock,
@@ -61,11 +64,117 @@ const DOMAINS: { id: KanbanCard['domain']; label: string; badge: string }[] = [
   { id: 'self', label: 'Self', badge: 'bg-teal-100 text-teal-900 border border-teal-300' }
 ];
 
+export const DEMO_KANBAN_CARDS: KanbanCard[] = [
+  {
+    id: 'demo-k-1',
+    title: 'Research noise-canceling headphones for open office',
+    description: 'Sensory shield tool to block conversational noise and auditory overload during afternoon hours.',
+    column: 'backlog',
+    domain: 'hobbies',
+    priority: 'low',
+    estimatedMinutes: 20,
+    createdAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString()
+  },
+  {
+    id: 'demo-k-2',
+    title: 'Reconcile healthcare receipts for tax credit',
+    description: 'Collect digital PDF bills from doctor portal and download receipts into Tax 2026 folder.',
+    column: 'backlog',
+    domain: 'work',
+    priority: 'medium',
+    estimatedMinutes: 30,
+    createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
+  },
+  {
+    id: 'demo-k-3',
+    title: 'Review Q3 Executive Summary slide deck',
+    description: 'Check milestone charts and bullet points before tomorrow morning meeting with CEO.',
+    column: 'this_week',
+    domain: 'work',
+    priority: 'high',
+    estimatedMinutes: 25,
+    createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
+  },
+  {
+    id: 'demo-k-4',
+    title: 'Order weekly grocery essentials (oats, berries, coffee)',
+    description: 'Use 3-minute online re-order list to eliminate late-night decision fatigue.',
+    column: 'this_week',
+    domain: 'lifestyle',
+    priority: 'medium',
+    estimatedMinutes: 15,
+    createdAt: new Date(Date.now() - 3600000 * 8).toISOString()
+  },
+  {
+    id: 'demo-k-5',
+    title: 'Finalize & send Client Acme invoices',
+    description: 'Currently in progress. 4 steps sliced with Agent 1 (Micro-Step Planner).',
+    column: 'in_progress',
+    domain: 'work',
+    priority: 'high',
+    estimatedMinutes: 20,
+    enteredInProgressAt: new Date(Date.now() - 3600000 * 1.5).toISOString(),
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
+  },
+  {
+    id: 'demo-k-6',
+    title: 'Morning sunlight & 10m outdoor reset walk',
+    description: 'Circadian anchor completed before beginning desk work. Feel refreshed.',
+    column: 'done',
+    domain: 'habits',
+    priority: 'low',
+    estimatedMinutes: 10,
+    createdAt: new Date(Date.now() - 3600000 * 4).toISOString()
+  },
+  {
+    id: 'demo-k-7',
+    title: 'Pay monthly cloud server bill',
+    description: 'Reconciled and receipt archived in drive.',
+    column: 'done',
+    domain: 'work',
+    priority: 'high',
+    estimatedMinutes: 5,
+    createdAt: new Date(Date.now() - 3600000 * 7).toISOString()
+  },
+  {
+    id: 'demo-k-8',
+    title: 'Daily 5:00 PM desktop shutdown ritual',
+    description: 'Close all open tabs, wipe keyboard, jot top priority for tomorrow.',
+    column: 'recurring',
+    domain: 'habits',
+    priority: 'medium',
+    estimatedMinutes: 15,
+    createdAt: new Date(Date.now() - 3600000 * 48).toISOString()
+  }
+];
+
 export function KanbanBoard() {
   const { user, getIdToken } = useAuth();
+  const { isDemoMode } = useDemoMode();
   const uid = user?.uid;
-  const [cards, setCards] = useState<KanbanCard[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [cards, setCards] = useState<KanbanCard[]>(() => {
+    if (isDemoMode) {
+      try {
+        const savedDemo = getUserStorageItem(uid, 'kanban_cards_demo');
+        if (savedDemo) {
+          const parsed = JSON.parse(savedDemo);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+      return DEMO_KANBAN_CARDS;
+    }
+    try {
+      const saved = getUserStorageItem(uid, 'kanban_cards');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((c: KanbanCard) => !c.id.startsWith('demo-k-'));
+        }
+      }
+    } catch {}
+    return [];
+  });
+  const [loading, setLoading] = useState<boolean>(false);
   const [selectedDomain, setSelectedDomain] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   
@@ -117,8 +226,15 @@ export function KanbanBoard() {
   });
 
   const fetchCards = useCallback(async () => {
+    if (isDemoMode) {
+      if (cards.length === 0) {
+        setCards(DEMO_KANBAN_CARDS);
+      }
+      setLoading(false);
+      return;
+    }
     if (!uid) {
-      setCards([]);
+      setCards((prev) => prev.filter((c) => !c.id.startsWith('demo-k-')));
       setLoading(false);
       return;
     }
@@ -132,29 +248,103 @@ export function KanbanBoard() {
       });
       if (res.ok) {
         const data = await res.json();
-        setCards(data.cards || []);
+        if (data.cards && data.cards.length > 0) {
+          const realOnly = data.cards.filter((c: KanbanCard) => !c.id.startsWith('demo-k-'));
+          setCards(realOnly);
+        } else {
+          setCards([]);
+        }
       } else {
-        setCards([]);
+        setCards((prev) => prev.filter((c) => !c.id.startsWith('demo-k-')));
       }
     } catch (e) {
       console.error('Failed to load kanban cards:', e);
-      setCards([]);
+      setCards((prev) => prev.filter((c) => !c.id.startsWith('demo-k-')));
     } finally {
       setLoading(false);
     }
-  }, [uid, getIdToken]);
+  }, [uid, getIdToken, isDemoMode, cards.length]);
 
   useEffect(() => {
     fetchCards();
   }, [fetchCards]);
 
+  // Reactive transition between demo mode and standard user workspace
+  useEffect(() => {
+    if (isDemoMode) {
+      try {
+        const savedDemo = getUserStorageItem(uid, 'kanban_cards_demo');
+        if (savedDemo) {
+          const parsed = JSON.parse(savedDemo);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setCards(parsed);
+            return;
+          }
+        }
+      } catch {}
+      setCards(DEMO_KANBAN_CARDS);
+    } else {
+      // Exiting demo mode: immediately remove all demo cards
+      setCards((prev) => {
+        const real = prev.filter((c) => !c.id.startsWith('demo-k-'));
+        return real;
+      });
+      fetchCards();
+    }
+  }, [isDemoMode, uid]);
+
+  // Persist cards locally in partitioned storage (demo separated from authentic cards)
+  useEffect(() => {
+    if (isDemoMode) {
+      if (cards.length > 0) {
+        try {
+          setUserStorageItem(uid, 'kanban_cards_demo', JSON.stringify(cards));
+        } catch {}
+      }
+    } else {
+      const realCards = cards.filter((c) => !c.id.startsWith('demo-k-'));
+      try {
+        if (realCards.length > 0) {
+          setUserStorageItem(uid, 'kanban_cards', JSON.stringify(realCards));
+        } else {
+          removeUserStorageItem(uid, 'kanban_cards');
+        }
+      } catch {}
+    }
+    emitDataUpdated('kanban');
+  }, [cards, uid, isDemoMode]);
+
   const handleCreateCard = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCard.title.trim()) return;
 
+    const createdCard: KanbanCard = {
+      id: `card_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      title: newCard.title.trim(),
+      description: newCard.description.trim(),
+      column: newCard.column,
+      domain: newCard.domain,
+      estimatedMinutes: newCard.estimatedMinutes,
+      priority: newCard.priority,
+      createdAt: new Date().toISOString(),
+      enteredInProgressAt: newCard.column === 'in_progress' ? new Date().toISOString() : null
+    };
+
+    // Optimistic immediate UI update
+    setCards((prev) => [createdCard, ...prev]);
+    setShowAddModal(false);
+    setNewCard({
+      title: '',
+      description: '',
+      column: 'this_week',
+      domain: 'work',
+      estimatedMinutes: 25,
+      priority: 'medium'
+    });
+
     try {
       const token = await getIdToken();
-      const res = await fetch('/api/kanban', {
+      await fetch('/api/kanban', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,29 +352,29 @@ export function KanbanBoard() {
         },
         body: JSON.stringify(newCard)
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        setCards((prev) => [data.card, ...prev]);
-        setShowAddModal(false);
-        setNewCard({
-          title: '',
-          description: '',
-          column: 'this_week',
-          domain: 'work',
-          estimatedMinutes: 25,
-          priority: 'medium'
-        });
-      }
     } catch (e) {
-      console.error('Failed to create card:', e);
+      console.warn('Backend sync notice (card preserved locally):', e);
     }
   };
 
   const executeMove = async (cardId: string, destColumn: KanbanCard['column']) => {
+    // Optimistic immediate UI update
+    setCards((prev) =>
+      prev.map((c) =>
+        c.id === cardId
+          ? {
+              ...c,
+              column: destColumn,
+              enteredInProgressAt: destColumn === 'in_progress' ? new Date().toISOString() : null,
+              isStagnant: false
+            }
+          : c
+      )
+    );
+
     try {
       const token = await getIdToken();
-      const res = await fetch(`/api/kanban/${cardId}/move`, {
+      await fetch(`/api/kanban/${cardId}/move`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -192,23 +382,8 @@ export function KanbanBoard() {
         },
         body: JSON.stringify({ column: destColumn })
       });
-
-      if (res.ok) {
-        setCards((prev) =>
-          prev.map((c) =>
-            c.id === cardId
-              ? {
-                  ...c,
-                  column: destColumn,
-                  enteredInProgressAt: destColumn === 'in_progress' ? new Date().toISOString() : null,
-                  isStagnant: false
-                }
-              : c
-          )
-        );
-      }
     } catch (e) {
-      console.error('Failed to move card:', e);
+      console.warn('Backend move sync notice (card moved locally):', e);
     }
   };
 
@@ -226,10 +401,23 @@ export function KanbanBoard() {
   };
 
   const handleToggleBlock = async (card: KanbanCard) => {
+    const nextBlocked = !card.isBlocked;
+    // Optimistic immediate UI update
+    setCards((prev) =>
+      prev.map((c) =>
+        c.id === card.id
+          ? {
+              ...c,
+              isBlocked: nextBlocked,
+              blockedReason: nextBlocked ? 'Waiting on external input / reply' : null
+            }
+          : c
+      )
+    );
+
     try {
       const token = await getIdToken();
-      const nextBlocked = !card.isBlocked;
-      const res = await fetch(`/api/kanban/${card.id}/block`, {
+      await fetch(`/api/kanban/${card.id}/block`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -240,14 +428,8 @@ export function KanbanBoard() {
           blockedReason: nextBlocked ? 'Waiting on external input / reply' : null
         })
       });
-
-      if (res.ok) {
-        setCards((prev) =>
-          prev.map((c) => (c.id === card.id ? { ...c, isBlocked: nextBlocked, blockedReason: nextBlocked ? 'Waiting on external input' : null } : c))
-        );
-      }
     } catch (e) {
-      console.error('Failed to toggle block status:', e);
+      console.warn('Backend block sync notice (card toggled locally):', e);
     }
   };
 
@@ -266,19 +448,18 @@ export function KanbanBoard() {
   };
 
   const handleDeleteCard = async (cardId: string) => {
+    // Optimistic immediate UI update
+    setCards((prev) => prev.filter((c) => c.id !== cardId));
     try {
       const token = await getIdToken();
-      const res = await fetch(`/api/kanban/${cardId}`, {
+      await fetch(`/api/kanban/${cardId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      if (res.ok) {
-        setCards((prev) => prev.filter((c) => c.id !== cardId));
-      }
     } catch (e) {
-      console.error('Failed to delete card:', e);
+      console.warn('Backend delete sync notice (card deleted locally):', e);
     }
   };
 
@@ -692,6 +873,19 @@ export function KanbanBoard() {
           </div>
         </div>
       )}
+
+      {/* Socratic Flow & Resistance Inquiry */}
+      <div className="mt-8">
+        <SocraticReasoningFollowUp
+          agentSource="kanban"
+          originalTask={
+            cards.filter(c => c.column === 'in_progress').map(c => c.title).join(', ') ||
+            cards.filter(c => c.column === 'this_week').map(c => c.title).join(', ') ||
+            'Kanban Flow & WIP Management'
+          }
+          agentOutput="Executive Flow State, WIP Soft-Gating, and Stagnation Prevention"
+        />
+      </div>
     </div>
   );
 }

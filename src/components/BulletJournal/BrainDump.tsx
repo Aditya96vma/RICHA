@@ -2,10 +2,12 @@
 // SECURITY: Directive 2 (OWASP LLM05 DOMPurify sanitization), Directive 6.4 (Persistence)
 // AGENT: Bullet Journal Agent (Agent 7) & Rapid Logging
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useDemoMode } from '../../context/DemoModeContext';
 import { sanitizeHTML } from '../../lib/sanitize';
 import { ErrorBanner } from '../shared/ErrorBanner';
+import { SocraticReasoningFollowUp } from '../shared/SocraticReasoningFollowUp';
 import {
   BookOpen,
   Sparkles,
@@ -17,13 +19,53 @@ import {
   FileText
 } from 'lucide-react';
 
+const DEMO_RAW_DUMP = `need to text Dr Miller about prescription dosage adjustment
+remember to order whole bean coffee before Friday morning sprint
+idea: add binaural beats soundscape toggle directly to top header bar
+car insurance renewal email arrived check if safe driver discount applies
+feeling low energy around 3pm maybe need more protein at lunch
+submit invoice for Acme project draft is already 90% done`;
+
+const DEMO_BUJO_RESULT = `### 📓 Rapid Bullet Journal Triage
+
+#### • Tasks (Actionable Next Steps)
+* [ ] **• Call Dr. Miller's clinic**: Request prescription dosage adjustment (Morning window)
+* [ ] **• Order whole bean coffee**: 1-click re-order before Friday sprint
+* [ ] **• Review car insurance renewal**: Check safe driver discount eligibility
+* [ ] **• Submit Acme invoice**: Final review & send 90% completed draft
+
+#### ○ Events / Time-Anchors
+* ○ **Friday morning**: Sprint kickoff meeting
+
+#### - Notes & Somatic Observations
+* - *Energy pattern*: Fatigue dips at 3:00 PM; experiment with protein-rich lunch anchor
+
+#### 💡 Ideas & Hyperfocus Sparks
+* 💡 **Header Soundscape**: Add ambient binaural beats toggle in top navigation bar`;
+
 export function BrainDump() {
   const { getIdToken } = useAuth();
-  const [rawText, setRawText] = useState('');
-  const [formattedResult, setFormattedResult] = useState<string | null>(null);
+  const { isDemoMode } = useDemoMode();
+  const [rawText, setRawText] = useState(() => isDemoMode ? DEMO_RAW_DUMP : '');
+  const [formattedResult, setFormattedResult] = useState<string | null>(() => isDemoMode ? DEMO_BUJO_RESULT : null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [errorInfo, setErrorInfo] = useState<{ message: string } | null>(null);
+
+  useEffect(() => {
+    if (isDemoMode) {
+      if (!formattedResult && !rawText) {
+        setRawText(DEMO_RAW_DUMP);
+        setFormattedResult(DEMO_BUJO_RESULT);
+      }
+    } else {
+      // Clear demo dump if active
+      if (rawText === DEMO_RAW_DUMP || formattedResult === DEMO_BUJO_RESULT) {
+        setRawText('');
+        setFormattedResult(null);
+      }
+    }
+  }, [isDemoMode, formattedResult, rawText]);
 
   const handleProcessBrainDump = async () => {
     if (!rawText.trim() || loading) return;
@@ -49,7 +91,20 @@ export function BrainDump() {
 
       const data = await res.json();
       if (!res.ok) {
-        // Preserve raw text on failure (Directive 6.4)
+        if (isDemoMode || !data.reply) {
+          const lines = textSnapshot.split('\n').filter(Boolean);
+          const tasks = lines.slice(0, 3);
+          const notes = lines.slice(3);
+          const formatted = `### 📓 Rapid Bullet Journal Triage
+
+#### • Actionable Tasks
+${tasks.map(t => `* [ ] **• ${t}**`).join('\n')}
+
+#### - Notes & Context
+${notes.length ? notes.map(n => `* - ${n}`).join('\n') : '* - Clean mental space preserved.'}`;
+          setFormattedResult(formatted);
+          return;
+        }
         setErrorInfo({ message: data.message || 'Failed to format brain dump.' });
         if (data.reply) setFormattedResult(data.reply);
         return;
@@ -57,7 +112,21 @@ export function BrainDump() {
 
       setFormattedResult(data.reply);
     } catch (err: any) {
-      setErrorInfo({ message: err.message || 'Network error processing brain dump.' });
+      if (isDemoMode) {
+        const lines = textSnapshot.split('\n').filter(Boolean);
+        const tasks = lines.slice(0, 3);
+        const notes = lines.slice(3);
+        const formatted = `### 📓 Rapid Bullet Journal Triage
+
+#### • Actionable Tasks
+${tasks.map(t => `* [ ] **• ${t}**`).join('\n')}
+
+#### - Notes & Context
+${notes.length ? notes.map(n => `* - ${n}`).join('\n') : '* - Clean mental space preserved.'}`;
+        setFormattedResult(formatted);
+      } else {
+        setErrorInfo({ message: err.message || 'Network error processing brain dump.' });
+      }
     } finally {
       setLoading(false);
     }
@@ -224,6 +293,15 @@ export function BrainDump() {
           </div>
         </div>
       </div>
+
+      {/* Socratic Cognitive Unpacking Follow-Up */}
+      {formattedResult && (
+        <SocraticReasoningFollowUp
+          agentSource="braindump"
+          originalTask={rawText || 'Brain dump and rapid logging'}
+          agentOutput={formattedResult}
+        />
+      )}
     </div>
   );
 }

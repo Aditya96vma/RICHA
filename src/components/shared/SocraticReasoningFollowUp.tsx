@@ -4,7 +4,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useDemoMode } from '../../context/DemoModeContext';
 import { sanitizeHTML } from '../../lib/sanitize';
+import { setStoredJournal, emitDataUpdated } from '../../utils/userStorage';
 import {
   HelpCircle,
   Sparkles,
@@ -30,7 +32,7 @@ export interface SocraticTurn {
 }
 
 interface SocraticReasoningFollowUpProps {
-  agentSource: 'prioritizer' | 'planner' | 'braindump' | 'admin' | 'wellbeing' | 'general';
+  agentSource: 'prioritizer' | 'planner' | 'braindump' | 'admin' | 'wellbeing' | 'general' | 'kanban' | 'habits' | 'journal';
   originalTask: string;
   agentOutput: string;
   onSendToPlanner?: (taskText: string) => void;
@@ -44,7 +46,8 @@ export function SocraticReasoningFollowUp({
   onSendToPlanner,
   onSaveToJournalSuccess
 }: SocraticReasoningFollowUpProps) {
-  const { getIdToken } = useAuth();
+  const { user, getIdToken } = useAuth();
+  const { isDemoMode } = useDemoMode();
   const [isOpen, setIsOpen] = useState(true);
   const [inputVal, setInputVal] = useState('');
   const [loading, setLoading] = useState(false);
@@ -188,6 +191,24 @@ ${turns.map((t) => `**${t.sender === 'user' ? 'My Reflection' : 'Socratic Coach'
 
 *Saved from Socratic Follow-Up on ${new Date().toLocaleDateString()}*`;
 
+      const journalPayload = {
+        id: `journal_socratic_${Date.now()}`,
+        title: `Socratic Breakthrough: ${originalTask.slice(0, 50) || agentSource}`,
+        content: summaryText,
+        mood: 'insightful',
+        emotionalLandmark: 'breakthrough',
+        energyLevel: 4,
+        createdAt: new Date().toISOString()
+      };
+
+      // 1. Immediately store to partitioned user storage so Bento Grid updates with zero lag
+      setStoredJournal(user?.uid, isDemoMode, journalPayload, {
+        userText: `Socratic Inquiry on: ${originalTask}`,
+        aiReply: turns[turns.length - 1]?.text || summaryText
+      });
+      emitDataUpdated('journal');
+
+      // 2. Persist to Firestore / backend API
       const res = await fetch('/api/data/journal', {
         method: 'POST',
         headers: {
@@ -195,8 +216,11 @@ ${turns.map((t) => `**${t.sender === 'user' ? 'My Reflection' : 'Socratic Coach'
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          entryText: summaryText,
+          title: journalPayload.title,
+          content: summaryText,
           mood: 'insightful',
+          emotionalLandmark: 'breakthrough',
+          energyLevel: 4,
           tags: ['socratic', agentSource, 'cognitive-reframing'],
           sentimentScore: 0.8
         })
@@ -207,10 +231,15 @@ ${turns.map((t) => `**${t.sender === 'user' ? 'My Reflection' : 'Socratic Coach'
         setJournalStatusMsg('Logged to Intelligent Journal!');
         if (onSaveToJournalSuccess) onSaveToJournalSuccess('Socratic session saved to Journal');
         setTimeout(() => setJournalStatusMsg(null), 4000);
+      } else {
+        setSavedToJournal(true);
+        setJournalStatusMsg('Cached in Intelligent Journal & Dashboard!');
+        setTimeout(() => setJournalStatusMsg(null), 4000);
       }
     } catch (e) {
       console.warn('Failed to save Socratic session to journal:', e);
-      setJournalStatusMsg('Saved to local journal scratchpad.');
+      setSavedToJournal(true);
+      setJournalStatusMsg('Cached in Intelligent Journal & Dashboard.');
       setTimeout(() => setJournalStatusMsg(null), 4000);
     }
   };
@@ -419,6 +448,46 @@ function generateContextualProbes(agentSource: string, rawText: string): string[
     ];
   }
 
+  if (agentSource === 'kanban') {
+    return [
+      "Has this task stayed in 'In Progress' because it's secretly multiple tasks combined?",
+      "What is the single physical movement needed to break initial inertia on this card?",
+      "Would moving this back to 'This Week' relieve cognitive pressure and let you focus?"
+    ];
+  }
+
+  if (agentSource === 'habits') {
+    return [
+      "Is this habit triggering resistance because the current target requires high executive energy?",
+      "Can we design a 60-second atomic version that protects your identity without causing burnout?",
+      "What sensory trigger or environmental anchor could make this habit feel effortless?"
+    ];
+  }
+
+  if (agentSource === 'admin') {
+    return [
+      "What part of this chore has the highest sensory friction (noise, mess, physical transition)?",
+      "Can the preparation step be reduced to under 90 seconds?",
+      "What if you only do 1 unit (one dish, one form, one folder) and declare a victory?"
+    ];
+  }
+
+  if (agentSource === 'wellbeing') {
+    return [
+      "Why does your nervous system treat rest as an earned reward rather than basic operational maintenance?",
+      "What sensory stimulation in your immediate environment can you eliminate right now?",
+      "What unspoken standard are you holding yourself to today that is draining your battery?"
+    ];
+  }
+
+  if (agentSource === 'braindump') {
+    return [
+      "Looking at this brain dump, which single item carries the heaviest emotional weight?",
+      "Can 80% of these captured thoughts safely remain archived until next week?",
+      "If you could only address one tangible thing today, which would give you the most relief?"
+    ];
+  }
+
   return [
     "What feels like the biggest sensory or cognitive friction point right now?",
     "What is the hidden assumption you are making about what you 'should' accomplish today?"
@@ -443,6 +512,51 @@ function generateContextualQuickReplies(agentSource: string, rawText: string): s
       "Help me shrink the top priority task down",
       "How do I let go of the delayed tasks without anxiety?",
       "I feel stuck between 2 equally urgent things"
+    ];
+  }
+
+  if (agentSource === 'kanban') {
+    return [
+      "This card has been stuck because it's too ambiguous",
+      "Help me slice this card into 3 micro-steps",
+      "I'm overloaded by having too many cards in progress",
+      "What's the 5-minute version of this task?"
+    ];
+  }
+
+  if (agentSource === 'habits') {
+    return [
+      "I feel like a failure when my streak breaks",
+      "Help me shrink this habit to a 60-second atomic version",
+      "What sensory anchor can I attach this to?",
+      "I'm too exhausted for my normal routine"
+    ];
+  }
+
+  if (agentSource === 'admin') {
+    return [
+      "Starting this chore feels exhausting",
+      "Can I automate or skip half of this routine?",
+      "What if I only do 5 minutes of prep today?",
+      "How do I eliminate the paperwork dread?"
+    ];
+  }
+
+  if (agentSource === 'wellbeing') {
+    return [
+      "I feel guilty resting while so much is unfinished",
+      "Guide me through a 2-minute nervous system reset",
+      "How do I set boundaries without feeling selfish?",
+      "Am I masking or pushing past my sensory limit?"
+    ];
+  }
+
+  if (agentSource === 'braindump') {
+    return [
+      "The sheer volume of my thoughts is freezing me",
+      "Which of these actually matters today?",
+      "Help me extract just ONE physical action",
+      "Can I safely archive the rest for next week?"
     ];
   }
 

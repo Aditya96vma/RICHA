@@ -13,6 +13,8 @@ import { Prioritizer4D } from '../components/Prioritizer/Prioritizer4D';
 import { HabitTracker } from '../components/Habits/HabitTracker';
 import { LifeAdminView } from '../components/Admin/LifeAdminView';
 import { WellbeingView } from '../components/Wellbeing/WellbeingView';
+import { GlobalControls } from '../components/shared/GlobalControls';
+import { DemoShowcaseBanner } from '../components/shared/DemoShowcaseBanner';
 import {
   Brain,
   LayoutGrid,
@@ -139,8 +141,11 @@ export function Dashboard({ onLogout }: DashboardProps) {
             })}
           </div>
 
-          {/* User Profile & Mode Indicator */}
-          <div className="flex items-center gap-3 border-l border-slate-200 pl-3 sm:pl-5">
+          {/* 2 Global Toggles & User Profile */}
+          <div className="flex items-center gap-2 sm:gap-3 border-l border-slate-200 pl-3 sm:pl-5">
+            {/* 2 Global Toggles: 1 for Dark/Light mode, 1 for Demo Mode */}
+            <GlobalControls onNavigateTab={handleNavigateWithHandoff} />
+
             {/* Sensory Shield Fast Action Trigger (Dimension 2) */}
             <button
               id="dashboard-shield-btn"
@@ -149,18 +154,18 @@ export function Dashboard({ onLogout }: DashboardProps) {
               title="Fast-path Sensory Shield & Overwhelm Protection"
             >
               <ShieldCheck className="w-4 h-4 text-white" />
-              <span className="hidden md:inline">🛡️ Sensory Shield</span>
+              <span className="hidden xl:inline">🛡️ Sensory Shield</span>
             </button>
 
             {/* Storage Architecture & Data Sovereignty Trigger */}
             <button
               id="dashboard-storage-btn"
               onClick={() => setShowStorageModal(true)}
-              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-lg border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
+              className="hidden md:flex px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-lg border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] items-center gap-1.5 cursor-pointer transition-all shrink-0"
               title="How your data is stored, isolated, and protected"
             >
               <Database className="w-4 h-4 text-indigo-600" />
-              <span className="hidden md:inline">Storage Architecture</span>
+              <span className="hidden lg:inline">Storage</span>
             </button>
 
             <div className="text-right hidden sm:block">
@@ -197,7 +202,13 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
         {/* Mobile Navigation Dropdown */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t-2 border-slate-900 bg-white p-3 space-y-1">
+          <div className="lg:hidden border-t-2 border-slate-900 bg-white p-3 space-y-3">
+            {/* Global Toggles in Mobile Menu */}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Toggles</span>
+              <GlobalControls onNavigateTab={handleNavigateWithHandoff} />
+            </div>
+
             <div className="grid grid-cols-2 gap-1.5">
               {TABS.map((tab) => {
                 const Icon = tab.icon;
@@ -228,6 +239,12 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
       {/* Main View Container */}
       <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1">
+        {/* Interactive Demo Showcase Banner with Example Navigation */}
+        <DemoShowcaseBanner
+          activeTab={activeTab}
+          onNavigateTab={(tab) => handleNavigateWithHandoff(tab)}
+        />
+
         {activeTab === 'overview' && (
           <BentoOverview
             onNavigateTab={(t, payload) => handleNavigateWithHandoff(t as DashboardTab, payload)}

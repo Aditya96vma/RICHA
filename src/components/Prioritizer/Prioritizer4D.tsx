@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useDemoMode } from '../../context/DemoModeContext';
 import { sanitizeHTML } from '../../lib/sanitize';
 import { ErrorBanner } from '../shared/ErrorBanner';
 import { SocraticReasoningFollowUp } from '../shared/SocraticReasoningFollowUp';
@@ -30,6 +31,7 @@ interface Prioritizer4DProps {
 
 export function Prioritizer4D({ onNavigateTab, handoffData, onClearHandoff }: Prioritizer4DProps) {
   const { getIdToken } = useAuth();
+  const { isDemoMode } = useDemoMode();
   const [taskList, setTaskList] = useState('');
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -37,6 +39,59 @@ export function Prioritizer4D({ onNavigateTab, handoffData, onClearHandoff }: Pr
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [savedToJournal, setSavedToJournal] = useState(false);
   const [pushedToKanban, setPushedToKanban] = useState(false);
+
+  const loadDemoTriage = () => {
+    const demoText = `1. Finish and email Q3 invoice draft to Client Acme
+2. Water the wilting fiddle leaf fig
+3. Reply to 14 unread Slack messages about office snacks
+4. Schedule dentist cleaning overdue by 6 months
+5. Clean out entire garage before weekend
+6. Review quarterly analytics deck for CEO meeting tomorrow
+7. Rewrite personal blog bio
+8. Pick up prescription refill from pharmacy`;
+
+    const demoResult = `### 🗑️ 1. DELETE (Relieve shame, drop zero-yield guilt)
+* **Rewrite personal blog bio**: Zero immediate impact on your wellbeing or livelihood. Purged from cognitive backlog.
+* **Reply to 14 unread Slack messages about office snacks**: Let others vote or handle it. Not your job today.
+
+### ⏳ 2. DELAY (Schedule realistic date buffer)
+* **Clean out entire garage before weekend**: Unrealistic 4-hour task during high-stress week. Rescheduled to Next Month Saturday sprint.
+* **Schedule dentist cleaning overdue by 6 months**: Important but non-urgent. Logged for Thursday 2 PM admin buffer.
+
+### 👥 3. DELEGATE / DIMINISH (Minimum Viable Version - MVV)
+* **Water the wilting fiddle leaf fig**: MVV -> Dump 1 glass of tap water on it right now (10 seconds), don't worry about fertilizing.
+* **Review quarterly analytics deck for CEO meeting**: MVV -> Review only the Executive Summary slide and 2 key KPI graphs (15 mins).
+
+### ⚡ 4. DO (Immediate Focus - High Dopamine / Critical Impact)
+* **Pick up prescription refill from pharmacy**: Health critical. Run out and pick it up or order courier delivery.
+* **Finish and email Q3 invoice draft to Client Acme**: Generates cashflow and eliminates lingering cognitive friction.`;
+
+    setTaskList(demoText);
+    setResult(demoResult);
+    setToastMessage('✓ Loaded Agent 2 Demo Showcase 4D Matrix!');
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Auto-mount or auto-clear 4D demo in response to Demo Mode toggle
+  useEffect(() => {
+    if (isDemoMode) {
+      if (!result && !taskList) {
+        loadDemoTriage();
+      }
+    } else {
+      // If currently displaying the showcase demo triage, clear it
+      const isDemoTriage =
+        taskList.includes('Clean out entire garage') ||
+        taskList.includes('Client Acme') ||
+        (result && result.includes('DELETE (Relieve shame'));
+      if (isDemoTriage) {
+        setTaskList('');
+        setResult(null);
+        setSavedToJournal(false);
+        setPushedToKanban(false);
+      }
+    }
+  }, [isDemoMode, result, taskList]);
 
   // Check for incoming cross-agent handoff payload
   useEffect(() => {
@@ -76,6 +131,22 @@ export function Prioritizer4D({ onNavigateTab, handoffData, onClearHandoff }: Pr
 
       const data = await res.json();
       if (!res.ok) {
+        if (isDemoMode || !data.reply) {
+          const lines = taskList.split('\n').map(l => l.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean);
+          const fallback = `### 🗑️ 1. DELETE (Relieve shame, drop zero-yield guilt)
+* **${lines[4] || 'Low-priority distraction'}**: Zero immediate impact on your wellbeing. Purged from cognitive backlog.
+
+### ⏳ 2. DELAY (Schedule realistic date buffer)
+* **${lines[2] || 'Secondary non-urgent item'}**: Rescheduled to weekly low-friction window.
+
+### 👥 3. DELEGATE / DIMINISH (Minimum Viable Version - MVV)
+* **${lines[1] || 'Complex task'}**: MVV -> Complete 5-minute atomic version.
+
+### ⚡ 4. DO (Immediate Focus - High Dopamine / Critical Impact)
+* **${lines[0] || 'Core priority'}**: Tackle immediately with 15-minute timer.`;
+          setResult(fallback);
+          return;
+        }
         setErrorInfo({ message: data.message || 'Failed 4D review.' });
         if (data.reply) setResult(data.reply);
         return;
@@ -224,6 +295,31 @@ export function Prioritizer4D({ onNavigateTab, handoffData, onClearHandoff }: Pr
               View Board →
             </button>
           )}
+        </div>
+      )}
+
+      {/* Demo Mode Showcase Callout Banner */}
+      {isDemoMode && (
+        <div className="p-4 rounded-2xl bg-purple-950 text-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-400 text-purple-950 flex items-center justify-center font-bold shrink-0 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-amber-300 uppercase tracking-wider">Agent 2 Demo Showcase Active</p>
+              <p className="text-xs text-purple-200">
+                Experience Morgenstern's 4D triage matrix across 8 realistic work & personal tasks with dopamine rewards.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={loadDemoTriage}
+            className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-purple-950 font-black text-xs rounded-xl border border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] shrink-0 flex items-center gap-1.5 cursor-pointer active:translate-y-0.5"
+          >
+            <span>Load 4D Matrix Demo</span>
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 

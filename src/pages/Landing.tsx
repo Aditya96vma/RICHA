@@ -4,10 +4,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useDemoMode } from '../context/DemoModeContext';
+import { GlobalControls } from '../components/shared/GlobalControls';
 import { Sparkles, Brain, CheckCircle2, ShieldCheck, ArrowRight, Zap, RefreshCw, Calendar, HeartHandshake, AlertTriangle, Copy, ExternalLink, HelpCircle, Check } from 'lucide-react';
 
 export function Landing({ onNavigateToDashboard }: { onNavigateToDashboard: () => void }) {
   const { user, loginWithGoogle, loginAsDemoUser, loading } = useAuth();
+  const { isDemoMode, setDemoMode } = useDemoMode();
   const [authError, setAuthError] = useState<{ title: string; message: string; code?: string; suggestion?: string } | null>(null);
   const [copiedDomain, setCopiedDomain] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -88,6 +91,7 @@ export function Landing({ onNavigateToDashboard }: { onNavigateToDashboard: () =
   };
 
   const handleDemoLogin = () => {
+    setDemoMode(true);
     loginAsDemoUser();
     onNavigateToDashboard();
   };
@@ -108,17 +112,20 @@ export function Landing({ onNavigateToDashboard }: { onNavigateToDashboard: () =
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* 2 Global Toggles */}
+          <GlobalControls />
+
           <button
             type="button"
             onClick={() => setShowConfigModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-extrabold border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] transition-transform active:translate-y-0.5"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-extrabold border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] transition-transform active:translate-y-0.5"
           >
             <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
             <span>Connection Guide</span>
           </button>
 
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-100 text-emerald-900 rounded-full text-xs font-extrabold border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+          <span className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-100 text-emerald-900 rounded-full text-xs font-extrabold border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
             <ShieldCheck className="w-4 h-4 text-emerald-700" />
             OWASP & Zero-Trust
           </span>
@@ -185,6 +192,29 @@ export function Landing({ onNavigateToDashboard }: { onNavigateToDashboard: () =
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Demo Mode Active Callout */}
+          {isDemoMode && (
+            <div className="mb-6 p-4 rounded-xl bg-purple-900 text-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] max-w-lg mx-auto flex items-center justify-between gap-3 text-left">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-400 text-purple-950 flex items-center justify-center font-bold shrink-0">
+                  <Sparkles className="w-4 h-4 fill-purple-950" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-amber-300 uppercase tracking-wider">Demo Mode is Enabled</p>
+                  <p className="text-xs text-purple-200">Explore pre-populated examples across all 7 agents.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-purple-950 font-black text-xs rounded-xl border border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] shrink-0 flex items-center gap-1 cursor-pointer"
+              >
+                <span>Launch Showcase</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
 

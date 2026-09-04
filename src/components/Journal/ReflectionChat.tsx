@@ -4,12 +4,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useDemoMode } from '../../context/DemoModeContext';
 import { sanitizeHTML } from '../../lib/sanitize';
 import { ErrorBanner } from '../shared/ErrorBanner';
 import {
   getUserStorageItem,
   setUserStorageItem,
-  removeUserStorageItem
+  removeUserStorageItem,
+  setStoredJournal,
+  emitDataUpdated
 } from '../../utils/userStorage';
 import {
   Send,
@@ -111,10 +114,89 @@ interface ReflectionChatProps {
   handoffData?: any;
 }
 
+const DEMO_CHAT_MESSAGES: ChatMessage[] = [
+  {
+    id: 'demo-chat-1',
+    sender: 'user',
+    text: "I've been staring at my laptop for an hour trying to finish these client invoices. My brain feels like complete static and I keep getting distracted by random browser tabs.",
+    timestamp: '14:20'
+  },
+  {
+    id: 'demo-chat-2',
+    sender: 'assistant',
+    text: "I hear that static loud and clear. That's not laziness — that's executive dysfunction hitting a wall of perceived friction and financial dread.\n\nLet's do a zero-guilt micro-step: don't calculate any totals right now. Just log into the portal and open the draft tab. Can we agree to spend just 3 minutes there, with zero obligation to send it?",
+    agentName: 'Agent 5 • Cognitive Mirror',
+    intent: 'conversational_journal',
+    timestamp: '14:21'
+  },
+  {
+    id: 'demo-chat-3',
+    sender: 'user',
+    text: "Okay, I opened the draft tab and checked the hours against my calendar. It actually only took 4 minutes. What next?",
+    timestamp: '14:26'
+  },
+  {
+    id: 'demo-chat-4',
+    sender: 'assistant',
+    text: "Huge dopamine win! You shattered the initiation paralysis barrier.\n\nHere is your synthesized journal entry for today's win:\n\n--- Journal Entry: Shattering the Invoice Paralysis Wall ---\n* **Mood**: Relieved & Grounded (Energy: 4/5)\n* **Emotional Landmark**: Overcame financial dread through 3-minute atomic entry instead of pushing through brute force.\n* **Core Takeaway**: Initiation dread was 10x larger than the actual task itself.\n\nI've committed this breakthrough to your Memory Vault so we can celebrate it when you reflect back on this week.",
+    agentName: 'Agent 5 • Cognitive Mirror',
+    intent: 'conversational_journal',
+    isJournalEntry: true,
+    timestamp: '14:27'
+  }
+];
+
+const DEMO_USER_MEMORY: UserMemory = {
+  people: [
+    { name: 'Dr. Miller', relationship: 'Physician / Psychiatrist', context: 'Manages prescription refills and wellness checkups' },
+    { name: 'Alex', relationship: 'Design Partner', context: 'Collaborator on sprint deck reviews' }
+  ],
+  health: [
+    { event: 'Prescription dosage check', detail: 'Morning routine review scheduled', date: 'Yesterday' },
+    { event: 'Circadian anchor', detail: '10 min morning sunlight walk', date: 'Today' }
+  ],
+  appointments: [
+    { what: 'Sprint Kickoff Sync', when: 'Friday 10:00 AM', notes: 'Camera optional' }
+  ],
+  work: [
+    { topic: 'Client Acme Invoicing', detail: 'Overcame task avoidance with 3-minute atomic start' },
+    { topic: 'Q3 Executive Deck', detail: 'Slide 1 exported; presentation review in progress' }
+  ],
+  moods: [
+    { mood: 'Relieved & Grounded', date: 'Today' },
+    { mood: 'Focused', date: 'Yesterday' }
+  ],
+  themes: ['Executive Functioning', 'Atomic Slicing', 'Sensory Regulation', 'Self-Compassion'],
+  emotionalLandmarks: {
+    proud: [{ moment: 'Broke invoice avoidance wall without shame or spiral', mood: 'Victorious', date: 'Today' }],
+    calm: [{ moment: '4-7-8 somatic breathing session reset sensory overload', mood: 'Centered', date: '2 days ago' }]
+  }
+};
+
+const DEMO_SAVED_JOURNALS = [
+  {
+    id: 'journal-demo-1',
+    date: 'Today, 2:27 PM',
+    title: 'Shattering the Invoice Paralysis Wall',
+    entry: 'Felt stuck for over an hour staring at draft billing portals. Used a 3-minute atomic entry rule with Agent 1 to open the portal without commitment. Ended up finishing all drafts in 18 minutes. Takeaway: the dread of starting was 10x worse than the work itself.',
+    mood: 'Relieved & Grounded',
+    tags: ['Admin', 'Invoicing', 'Dopamine Win']
+  },
+  {
+    id: 'journal-demo-2',
+    date: '3 days ago',
+    title: 'Afternoon Sensory Overwhelm Reset',
+    entry: 'Recognized auditory fatigue in the open office. Put on noise-canceling headphones with theta soundscapes and took a 10-minute hydration walk. Prevented an evening shutdown.',
+    mood: 'Calm & Restored',
+    tags: ['Sensory Shield', 'Wellbeing', 'Self-Compassion']
+  }
+];
+
 export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatProps = {}) {
   const { user, getIdToken } = useAuth();
+  const { isDemoMode } = useDemoMode();
   const uid = user?.uid;
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => isDemoMode ? DEMO_CHAT_MESSAGES : []);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [voiceMode, setVoiceMode] = useState(false);
@@ -123,8 +205,8 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
   const [showMemoryVault, setShowMemoryVault] = useState(false);
   const [showJournalHistory, setShowJournalHistory] = useState(false);
   const [showReminderSettings, setShowReminderSettings] = useState(false);
-  const [userMemory, setUserMemory] = useState<UserMemory | null>(null);
-  const [savedEntries, setSavedEntries] = useState<any[]>([]);
+  const [userMemory, setUserMemory] = useState<UserMemory | null>(() => isDemoMode ? DEMO_USER_MEMORY : null);
+  const [savedEntries, setSavedEntries] = useState<any[]>(() => isDemoMode ? DEMO_SAVED_JOURNALS : []);
   const [errorInfo, setErrorInfo] = useState<{ message: string; unsavedPayload?: any } | null>(null);
   
   // Architectural Dimensions 1, 2, 5: Orchestration Controls, Sanctuary Mode & Verbosity
@@ -408,26 +490,48 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
       }
 
       if (isMounted) {
-        setMessages([
-          {
-            id: 'welcome-msg',
-            sender: 'assistant',
-            text: `Hey, good to have you here. What's on your mind today?\n\nJust talk like a human — I remember what you share, and whenever you're ready, I'll write your journal for you in your own voice.`,
-            agentName: 'RICHA Companion',
-            intent: 'conversational_journal',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }
-        ]);
+        if (isDemoMode) {
+          setMessages(DEMO_CHAT_MESSAGES);
+          setUserMemory(DEMO_USER_MEMORY);
+          setSavedEntries(DEMO_SAVED_JOURNALS);
+        } else {
+          setMessages((prev) => {
+            const hasDemo = prev.some((m) => m.id.startsWith('demo-chat-') || m.id.startsWith('ai_demo_'));
+            if (hasDemo || prev.length === 0) {
+              return [
+                {
+                  id: 'welcome-msg',
+                  sender: 'assistant',
+                  text: `Hey, good to have you here. What's on your mind today?\n\nJust talk like a human — I remember what you share, and whenever you're ready, I'll write your journal for you in your own voice.`,
+                  agentName: 'RICHA Companion',
+                  intent: 'conversational_journal',
+                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                }
+              ];
+            }
+            return prev;
+          });
+          setUserMemory(null);
+          setSavedEntries([]);
+          fetchMemoryVault();
+          fetchSavedEntries();
+        }
       }
     }
 
     loadHistory();
-    fetchMemoryVault();
+    if (isDemoMode) {
+      setUserMemory(DEMO_USER_MEMORY);
+      setSavedEntries(DEMO_SAVED_JOURNALS);
+    } else {
+      fetchMemoryVault();
+      fetchSavedEntries();
+    }
 
     return () => {
       isMounted = false;
     };
-  }, [user, getIdToken]);
+  }, [user, getIdToken, isDemoMode]);
 
   // Handle Forget Memory Item (Improvement L - Privacy & Sovereignty)
   const handleForgetMemory = async (category: string, index: number) => {
@@ -582,6 +686,38 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
       const data = await response.json();
 
       if (!response.ok) {
+        if (isDemoMode) {
+          const lower = currentInput.toLowerCase();
+          let demoReply = `I'm right here with you. When cognitive overwhelm kicks in, our nervous system mistakes the task for an existential threat.\n\nLet's do a 120-second micro-step: what is the single atomic physical action you can take in the next 2 minutes?`;
+          let isJournal = false;
+          if (lower.includes('done') || lower.includes('finish') || lower.includes('sent') || lower.includes('did')) {
+            demoReply = `Terrific momentum! You conquered the initiation barrier.\n\n--- Journal Entry: Breaking Inertia ---\n* **Mood**: Relieved & Grounded\n* **Reflection**: Moving from avoidance to action proved that starting was the only real obstacle.\n\nArchived in your Memory Vault!`;
+            isJournal = true;
+          }
+          const aiMsg: ChatMessage = {
+            id: `ai_demo_${Date.now()}`,
+            sender: 'assistant',
+            text: demoReply,
+            agentName: 'Agent 5 • Cognitive Mirror',
+            intent: 'conversational_journal',
+            isJournalEntry: isJournal,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          setMessages((prev) => [...prev, aiMsg]);
+          removeUserStorageItem(uid, 'draft_keystroke');
+          setStoredJournal(uid, isDemoMode, {
+            id: `demo_journal_${Date.now()}`,
+            title: currentInput.slice(0, 45) + (currentInput.length > 45 ? '...' : ''),
+            content: currentInput,
+            mood: isJournal ? 'focused' : 'calm',
+            createdAt: new Date().toISOString()
+          }, {
+            userText: currentInput,
+            aiReply: demoReply
+          });
+          emitDataUpdated('journal');
+          return;
+        }
         setInputValue(currentInput);
         setErrorInfo({
           message: data.message || 'Failed to communicate with RICHA.',
@@ -608,6 +744,19 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
       };
 
       setMessages((prev) => [...prev, aiMsg]);
+
+      // Synchronize to local storage for instant Bento Grid reflection updates
+      setStoredJournal(uid, isDemoMode, {
+        id: `journal_${Date.now()}`,
+        title: currentInput.slice(0, 45) + (currentInput.length > 45 ? '...' : ''),
+        content: currentInput,
+        mood: 'focused',
+        createdAt: new Date().toISOString()
+      }, {
+        userText: currentInput,
+        aiReply: data.reply
+      });
+      emitDataUpdated('journal');
 
       // Speak if voice mode or TTS enabled
       if (voiceMode || ttsEnabled) {

@@ -3,7 +3,11 @@
 // AGENT: Kanban & Habit Agent (Agent 6)
 
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../hooks/useAuth';
 import { useFirestore } from '../../hooks/useFirestore';
+import { useDemoMode } from '../../context/DemoModeContext';
+import { getStoredHabits, setStoredHabits } from '../../utils/userStorage';
+import { SocraticReasoningFollowUp } from '../shared/SocraticReasoningFollowUp';
 import { Flame, CheckCircle, Plus, Sparkles, Trophy, Calendar, Trash2 } from 'lucide-react';
 
 interface HabitItem {
@@ -23,24 +27,38 @@ const DEFAULT_HABITS: HabitItem[] = [
 ];
 
 export function HabitTracker() {
+  const { user } = useAuth();
+  const { isDemoMode } = useDemoMode();
   const { data: remoteHabits, addDocument, removeDocument, loading: habitsLoading } = useFirestore<HabitItem>('habits');
-  const [habits, setHabits] = useState<HabitItem[]>([]);
+  
+  const [habits, setHabits] = useState<HabitItem[]>(() => {
+    const stored = getStoredHabits(user?.uid, isDemoMode);
+    if (stored && stored.length > 0) return stored;
+    return isDemoMode ? DEFAULT_HABITS : [];
+  });
   const [newHabitName, setNewHabitName] = useState('');
   const [newDomain, setNewDomain] = useState('self');
   const [newFreq, setNewFreq] = useState<'daily' | 'weekly'>('daily');
 
   useEffect(() => {
-    if (!habitsLoading) {
+    const stored = getStoredHabits(user?.uid, isDemoMode);
+    if (stored && stored.length > 0) {
+      setHabits(stored);
+    } else if (!habitsLoading) {
       if (remoteHabits && remoteHabits.length > 0) {
         setHabits(remoteHabits);
+        setStoredHabits(user?.uid, isDemoMode, remoteHabits);
+      } else if (isDemoMode) {
+        setHabits(DEFAULT_HABITS);
       } else {
         setHabits([]);
       }
     }
-  }, [remoteHabits, habitsLoading]);
+  }, [remoteHabits, habitsLoading, isDemoMode, user?.uid]);
 
   const handleLoadStarterHabits = async () => {
     setHabits(DEFAULT_HABITS);
+    setStoredHabits(user?.uid, isDemoMode, DEFAULT_HABITS);
     for (const h of DEFAULT_HABITS) {
       try {
         await addDocument(h);
@@ -63,6 +81,7 @@ export function HabitTracker() {
       return h;
     });
     setHabits(updated);
+    setStoredHabits(user?.uid, isDemoMode, updated);
 
     const changed = updated.find((h) => h.id === id);
     if (changed) {
@@ -87,7 +106,9 @@ export function HabitTracker() {
       completedToday: false
     };
 
-    setHabits((prev) => [newH, ...prev]);
+    const updated = [newH, ...habits];
+    setHabits(updated);
+    setStoredHabits(user?.uid, isDemoMode, updated);
     setNewHabitName('');
 
     try {
@@ -98,11 +119,13 @@ export function HabitTracker() {
   };
 
   const handleDelete = async (id: string) => {
-    setHabits((prev) => prev.filter((h) => h.id !== id));
+    const updated = habits.filter((h) => h.id !== id);
+    setHabits(updated);
+    setStoredHabits(user?.uid, isDemoMode, updated);
     try {
       await removeDocument(id);
     } catch (err) {
-      console.warn('Failed to delete habit from database:', err);
+      console.warn('Failed to delete habit:', err);
     }
   };
 
@@ -244,6 +267,13 @@ export function HabitTracker() {
         ))}
       </div>
       )}
+
+      {/* Socratic Habit Formation & Resistance Inquiry */}
+      <SocraticReasoningFollowUp
+        agentSource="habits"
+        originalTask={habits.length > 0 ? habits.map(h => `${h.name} (${h.streak}d streak)`).join(', ') : 'Daily Micro-Habit System'}
+        agentOutput="Consistent daily micro-routines with zero-shame streak resilience"
+      />
     </div>
   );
 }

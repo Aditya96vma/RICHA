@@ -2,19 +2,85 @@
 // SECURITY: Directive 2 (OWASP LLM05 Sanitization), Directive 6.4 (Persistence)
 // AGENT: Admin & Life Orchestrator Agent (Agent 3)
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useDemoMode } from '../../context/DemoModeContext';
 import { sanitizeHTML } from '../../lib/sanitize';
 import { ErrorBanner } from '../shared/ErrorBanner';
+import { SocraticReasoningFollowUp } from '../shared/SocraticReasoningFollowUp';
 import { Calendar, ShoppingBag, DollarSign, Heart, Sparkles, Clock, CheckCircle2 } from 'lucide-react';
+
+const DEMO_ADMIN_PLANS: Record<string, string> = {
+  meal_planning: `### 🛒 Low-Friction Meal Planning & Grocery Rhythm
+**Recommended Window:** Sunday 10:30 AM (25 minutes)
+**Cognitive Load:** Minimal (Decision-fatigue proof)
+
+#### 📋 3-Step Execution Checklist:
+1. **[5 min] The 3x3 Matrix**: Pick 3 core proteins (tofu, salmon, eggs) and 3 staple bases (brown rice, wholewheat wraps, sweet potatoes). Zero browsing recipes from scratch.
+2. **[10 min] 1-Click Basket Reorder**: Open online grocery app, tap "Buy It Again" for your 12 saved weekly staples (oats, almond milk, greens, berries, olive oil).
+3. **[10 min] Wash & Stage**: When delivered, wash produce immediately and place clear glass containers at eye-level in fridge.
+
+*💡 Neurodivergent Tip: Eliminate "What should I eat?" executive freeze by having one designated default fallback meal (e.g. 5-minute microwave sweet potato + black beans + avocado).*`,
+
+  finances: `### 💳 Stress-Free Monthly Financial Rhythm
+**Recommended Window:** 1st of every month, 11:00 AM (20 minutes)
+**Cognitive Load:** Low (Gentle exposure therapy)
+
+#### 📋 3-Step Execution Checklist:
+1. **[5 min] Calm Sensory Setup**: Pour favorite tea, put on low-tempo instrumental music, take 3 deep breaths before opening banking app.
+2. **[10 min] Subscription Audit**: Review last 30 days recurring charges. Flag unused SaaS or trial subscriptions for 1-click cancellation.
+3. **[5 min] Automated Transfer**: Ensure automatic deposit into emergency buffer account is confirmed. Close all banking tabs.
+
+*💡 Neurodivergent Tip: Pair financial reviews with a dopamine reward (e.g., favorite pastry or fresh coffee) to rewire emotional dread into calm predictability.*`,
+
+  laundry_home: `### 🧺 The 45-Minute Low-Demand Apartment Reset
+**Recommended Window:** Saturday 2:00 PM (45 minutes)
+**Cognitive Load:** Moderate (Physical movement + podcast)
+
+#### 📋 3-Step Execution Checklist:
+1. **[15 min] One-Touch Surface Sweep**: Grab a laundry hamper and collect all out-of-place items across desks and counters.
+2. **[15 min] Single Machine Load**: Wash bedding or towels only. Do not attempt multiple mixed sorting cycles.
+3. **[15 min] Trash & Air Reset**: Empty all small wastebaskets, open windows for 10 minutes of fresh airflow, wipe desk surface.
+
+*💡 Neurodivergent Tip: Keep trash bins and hampers in every room right where you naturally drop things, removing the friction of walking across the house.*`,
+
+  relationships: `### 💬 Low-Pressure Social Touchpoints
+**Recommended Window:** Thursday 6:00 PM (15 minutes)
+**Cognitive Load:** Ultra-Low (No conversation obligations)
+
+#### 📋 3-Step Execution Checklist:
+1. **[5 min] The "Thinking of You" Ping**: Send 1 meme, photo, or low-pressure text to a close friend ("No need to reply, just saw this and thought of you!").
+2. **[5 min] Calendar RSVP Triage**: Accept or decline pending social invites with zero guilt. Decline early rather than flaking late.
+3. **[5 min] Micro-Gratitude**: Send a quick sentence of appreciation to a coworker or collaborator.
+
+*💡 Neurodivergent Tip: The phrase "No need to reply" removes reciprocal pressure and makes social connection feel light instead of burdensome.*`
+};
 
 export function LifeAdminView() {
   const { getIdToken } = useAuth();
+  const { isDemoMode } = useDemoMode();
   const [selectedRoutine, setSelectedRoutine] = useState('meal_planning');
   const [customDetails, setCustomDetails] = useState('');
-  const [adminPlan, setAdminPlan] = useState<string | null>(null);
+  const [adminPlan, setAdminPlan] = useState<string | null>(() => isDemoMode ? DEMO_ADMIN_PLANS['meal_planning'] : null);
   const [loading, setLoading] = useState(false);
   const [errorInfo, setErrorInfo] = useState<{ message: string } | null>(null);
+
+  useEffect(() => {
+    if (isDemoMode) {
+      if (!adminPlan) {
+        setAdminPlan(DEMO_ADMIN_PLANS[selectedRoutine] || DEMO_ADMIN_PLANS['meal_planning']);
+      }
+    } else {
+      // When demo mode is disabled, check if adminPlan is a demo routine and clear it
+      const isDemoRoutine = Object.values(DEMO_ADMIN_PLANS).some(
+        (plan) => plan.trim() === adminPlan?.trim()
+      );
+      if (isDemoRoutine) {
+        setAdminPlan(null);
+        setCustomDetails('');
+      }
+    }
+  }, [isDemoMode, adminPlan, selectedRoutine]);
 
   const ROUTINES = [
     { id: 'meal_planning', label: 'Meal Planning & Groceries', icon: ShoppingBag, desc: 'Batch grocery list & low-effort meal prep' },
@@ -22,6 +88,13 @@ export function LifeAdminView() {
     { id: 'laundry_home', label: 'Home Reset & Laundry Cycle', icon: Clock, desc: 'Predictable 45-min apartment reset' },
     { id: 'relationships', label: 'Friendship & Contact Touchpoints', icon: Heart, desc: 'Low-pressure check-in messages' }
   ];
+
+  const handleSelectRoutine = (id: string) => {
+    setSelectedRoutine(id);
+    if (isDemoMode) {
+      setAdminPlan(DEMO_ADMIN_PLANS[id] || null);
+    }
+  };
 
   const handleGenerateRoutine = async () => {
     setLoading(true);
@@ -47,6 +120,10 @@ export function LifeAdminView() {
 
       const data = await res.json();
       if (!res.ok) {
+        if (isDemoMode || !data.reply) {
+          setAdminPlan(DEMO_ADMIN_PLANS[selectedRoutine] || DEMO_ADMIN_PLANS['meal_planning']);
+          return;
+        }
         setErrorInfo({ message: data.message || 'Failed to generate admin routine.' });
         if (data.reply) setAdminPlan(data.reply);
         return;
@@ -54,7 +131,11 @@ export function LifeAdminView() {
 
       setAdminPlan(data.reply);
     } catch (err: any) {
-      setErrorInfo({ message: err.message || 'Network error.' });
+      if (isDemoMode) {
+        setAdminPlan(DEMO_ADMIN_PLANS[selectedRoutine] || DEMO_ADMIN_PLANS['meal_planning']);
+      } else {
+        setErrorInfo({ message: err.message || 'Network error.' });
+      }
     } finally {
       setLoading(false);
     }
@@ -100,7 +181,7 @@ export function LifeAdminView() {
                   <button
                     key={r.id}
                     type="button"
-                    onClick={() => setSelectedRoutine(r.id)}
+                    onClick={() => handleSelectRoutine(r.id)}
                     className={`w-full text-left p-3.5 rounded-xl border-2 transition-all flex items-start gap-3 ${
                       isSelected
                         ? 'bg-indigo-50 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] ring-1 ring-indigo-500'
@@ -184,6 +265,15 @@ export function LifeAdminView() {
           </div>
         </div>
       </div>
+
+      {/* Socratic Life Admin & Executive Dread Follow-Up */}
+      {adminPlan && (
+        <SocraticReasoningFollowUp
+          agentSource="admin"
+          originalTask={customDetails || `Life Admin: ${selectedRoutine}`}
+          agentOutput={adminPlan}
+        />
+      )}
     </div>
   );
 }

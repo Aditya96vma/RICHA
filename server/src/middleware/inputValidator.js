@@ -62,10 +62,11 @@ export const chatMessageSchema = z.object({
  */
 export const journalEntrySchema = z.object({
   title: z.string().max(200).optional().default('Journal Entry'),
-  content: z.string().min(1, 'Journal content cannot be empty').max(10000),
-  mood: z.enum(['calm', 'focused', 'overwhelmed', 'tired', 'anxious', 'proud', 'neutral', 'happy', 'excited', 'sad', 'lowest', 'happiest']).optional().default('neutral'),
+  content: z.string().max(10000).optional(),
+  entryText: z.string().max(10000).optional(),
+  mood: z.enum(['calm', 'focused', 'overwhelmed', 'tired', 'anxious', 'proud', 'neutral', 'happy', 'excited', 'sad', 'lowest', 'happiest', 'insightful']).optional().default('neutral'),
   energyLevel: z.number().int().min(1).max(5).optional().default(3),
-  emotionalLandmark: z.enum(['happiest', 'lowest', 'proud', 'calm', 'neutral', 'breakthrough']).optional().default('neutral'),
+  emotionalLandmark: z.enum(['happiest', 'lowest', 'proud', 'calm', 'neutral', 'breakthrough', 'insightful']).optional().default('neutral'),
   location: z.object({
     placeName: z.string().max(100).optional(),
     latitude: z.number().min(-90).max(90).optional(),
@@ -73,7 +74,14 @@ export const journalEntrySchema = z.object({
     city: z.string().max(100).optional(),
     country: z.string().max(100).optional()
   }).optional(),
-  tags: z.array(z.string().max(32)).max(10).optional().default([])
+  tags: z.array(z.string().max(32)).max(10).optional().default([]),
+  sentimentScore: z.number().optional()
+}).transform((data) => ({
+  ...data,
+  content: (data.content || data.entryText || '').trim()
+})).refine((data) => data.content.length > 0, {
+  message: 'Journal content or entryText cannot be empty',
+  path: ['content']
 });
 
 /**

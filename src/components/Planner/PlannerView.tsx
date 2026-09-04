@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useDemoMode } from '../../context/DemoModeContext';
 import { sanitizeHTML } from '../../lib/sanitize';
 import { ErrorBanner } from '../shared/ErrorBanner';
 import { generateHumanExecutionPlan } from '../../utils/humanTaskProcessor';
@@ -88,6 +89,7 @@ function playGentleChime() {
 
 export function PlannerView({ onNavigateTab, handoffData, onClearHandoff }: PlannerViewProps = {}) {
   const { user, getIdToken } = useAuth();
+  const { isDemoMode } = useDemoMode();
   const uid = user?.uid;
 
   // Inputs
@@ -155,8 +157,88 @@ export function PlannerView({ onNavigateTab, handoffData, onClearHandoff }: Plan
   // Save steps to user-isolated storage
   const saveSteps = (steps: PlanStep[]) => {
     setParsedSteps(steps);
-    setUserStorageItem(uid, 'planner_steps', JSON.stringify(steps));
+    if (!isDemoMode) {
+      setUserStorageItem(uid, 'planner_steps', JSON.stringify(steps));
+    }
   };
+
+  // Demo Mode pre-loader
+  const loadDemoPlan = () => {
+    const demoTask = 'Submit Quarterly Invoices & Reconcile Healthcare Receipts';
+    setTaskInput(demoTask);
+    setDeadline('Today by 5:00 PM');
+    const demoSteps: PlanStep[] = [
+      {
+        id: 'demo-step-1',
+        title: 'Gather invoices & open billing portal',
+        action: 'Log into your invoicing dashboard and open the 3 unpaid draft client contracts.',
+        timeMinutes: 10,
+        energy: 'Low',
+        priority: 'High',
+        completed: true
+      },
+      {
+        id: 'demo-step-2',
+        title: 'Verify hours worked against Google Calendar',
+        action: 'Cross-check the 4 major sprint milestones logged in your calendar notes.',
+        timeMinutes: 15,
+        energy: 'Medium',
+        priority: 'High',
+        completed: true
+      },
+      {
+        id: 'demo-step-3',
+        title: 'Generate PDF summaries and hit Send',
+        action: 'Click "Batch Send" with standard template. Put phone on DND for 5 minutes.',
+        timeMinutes: 12,
+        energy: 'Low',
+        priority: 'High',
+        completed: false
+      },
+      {
+        id: 'demo-step-4',
+        title: 'File PDF receipts into Cloud folder',
+        action: 'Drag downloaded receipts into 2026/Q3 Expenses folder. Take 10 min break.',
+        timeMinutes: 8,
+        energy: 'Low',
+        priority: 'Medium',
+        completed: false
+      }
+    ];
+    setParsedSteps(demoSteps);
+    setPlanResult(`### Phase 1: Preparation\n* **Gather invoices & open billing portal** (10m, Low Energy)\n* **Verify hours worked against Google Calendar** (15m, Medium Energy)\n\n### Phase 2: Execution\n* **Generate PDF summaries and hit Send** (12m, Low Energy)\n* **File PDF receipts into Cloud folder** (8m, Low Energy)`);
+    setSuggestedNextStep('Generate PDF summaries and hit Send');
+    setToastMessage('✓ Loaded Agent 1 Demo Showcase Plan!');
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // Auto-mount or auto-clear demo plan based on Demo Mode
+  useEffect(() => {
+    if (isDemoMode) {
+      if (parsedSteps.length === 0 && !planResult) {
+        loadDemoPlan();
+      }
+    } else {
+      // Switched off demo mode: if current plan is the demo plan, clear it!
+      const isCurrentlyDemo =
+        taskInput === 'Submit Quarterly Invoices & Reconcile Healthcare Receipts' ||
+        parsedSteps.some((s) => s.id.startsWith('demo-step-'));
+      if (isCurrentlyDemo) {
+        setTaskInput('');
+        setDeadline('');
+        setParsedSteps([]);
+        setPlanResult(null);
+        setSuggestedNextStep(null);
+        setCurrentStepIndex(0);
+        removeUserStorageItem(uid, 'planner_task_input');
+        removeUserStorageItem(uid, 'planner_task');
+        removeUserStorageItem(uid, 'planner_steps');
+        removeUserStorageItem(uid, 'planner_result');
+        removeUserStorageItem(uid, 'planner_plan_raw');
+        removeUserStorageItem(uid, 'planner_suggested');
+      }
+    }
+  }, [isDemoMode, parsedSteps, planResult, taskInput, uid]);
 
   // Sync with remote plan if available for this specific authenticated user
   useEffect(() => {
@@ -451,6 +533,25 @@ export function PlannerView({ onNavigateTab, handoffData, onClearHandoff }: Plan
 
       const data = await res.json();
       if (!res.ok) {
+        if (isDemoMode || !data.reply) {
+          const humanPlan = generateHumanExecutionPlan(taskToPlan);
+          const formattedFallback = humanPlan.phases.map(p => `### ${p.title} (${p.timeMinutes} min | ${p.energy} Energy)\n* **Action:** ${p.action}`).join('\n\n');
+          setPlanResult(formattedFallback);
+          saveSteps(humanPlan.phases.map(p => ({
+            id: p.id,
+            title: p.title,
+            action: p.action,
+            timeMinutes: p.timeMinutes,
+            energy: p.energy,
+            priority: p.priority,
+            completed: p.completed
+          })));
+          const firstAction = humanPlan.phases[0]?.title || 'Begin step 1';
+          setSuggestedNextStep(firstAction);
+          setCurrentStepIndex(0);
+          setActiveView('checklist');
+          return;
+        }
         setErrorInfo({ message: data.message || 'Failed to generate task plan.' });
         if (data.reply) setPlanResult(data.reply);
         return;
@@ -522,7 +623,26 @@ export function PlannerView({ onNavigateTab, handoffData, onClearHandoff }: Plan
       setCurrentStepIndex(0);
       setActiveView('checklist');
     } catch (err: any) {
-      setErrorInfo({ message: err.message || 'Network error.' });
+      if (isDemoMode) {
+        const humanPlan = generateHumanExecutionPlan(taskToPlan);
+        const formattedFallback = humanPlan.phases.map(p => `### ${p.title} (${p.timeMinutes} min | ${p.energy} Energy)\n* **Action:** ${p.action}`).join('\n\n');
+        setPlanResult(formattedFallback);
+        saveSteps(humanPlan.phases.map(p => ({
+          id: p.id,
+          title: p.title,
+          action: p.action,
+          timeMinutes: p.timeMinutes,
+          energy: p.energy,
+          priority: p.priority,
+          completed: p.completed
+        })));
+        const firstAction = humanPlan.phases[0]?.title || 'Begin step 1';
+        setSuggestedNextStep(firstAction);
+        setCurrentStepIndex(0);
+        setActiveView('checklist');
+      } else {
+        setErrorInfo({ message: err.message || 'Network error.' });
+      }
     } finally {
       setLoading(false);
     }
@@ -764,6 +884,31 @@ export function PlannerView({ onNavigateTab, handoffData, onClearHandoff }: Plan
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex items-center gap-3 text-xs font-black animate-in fade-in slide-in-from-bottom-3 duration-200">
           <Sparkles className="w-4 h-4 text-amber-400" />
           <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Demo Mode Showcase Callout Banner */}
+      {isDemoMode && (
+        <div className="p-4 rounded-2xl bg-purple-950 text-white border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-400 text-purple-950 flex items-center justify-center font-bold shrink-0 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-amber-300 uppercase tracking-wider">Agent 1 Demo Showcase Active</p>
+              <p className="text-xs text-purple-200">
+                Explore a live 4-step invoice plan with interactive check-offs, 15m timer, and Next-Action prompts.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={loadDemoPlan}
+            className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-purple-950 font-black text-xs rounded-xl border border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] shrink-0 flex items-center gap-1.5 cursor-pointer active:translate-y-0.5"
+          >
+            <span>Load Demo Plan</span>
+            <Zap className="w-3.5 h-3.5 fill-purple-950" />
+          </button>
         </div>
       )}
 

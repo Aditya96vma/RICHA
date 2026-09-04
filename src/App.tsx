@@ -4,6 +4,8 @@
 
 import React, { useState } from 'react';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { DemoModeProvider } from './context/DemoModeContext';
 import { useAuth } from './hooks/useAuth';
 import { Landing } from './pages/Landing';
 import { Dashboard } from './pages/Dashboard';
@@ -41,9 +43,13 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <DemoModeProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </DemoModeProvider>
+    </ThemeProvider>
   );
 }
 

@@ -1,1 +1,158 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Dark mode root variable & baseline support */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #0b0f19;
+  color: #f1f5f9;
+}
+
+/* Invert brutalist panels cleanly in dark mode */
+.dark .bg-white {
+  background-color: #131b2e;
+}
+
+.dark .bg-\[\#F1F5F9\] {
+  background-color: #0b0f19;
+}
+
+.dark .bg-slate-50 {
+  background-color: #0f172a;
+}
+
+.dark .bg-slate-100 {
+  background-color: #1e293b;
+}
+
+.dark .bg-slate-200 {
+  background-color: #2e3d55;
+}
+
+.dark .text-slate-900 {
+  color: #f8fafc;
+}
+
+.dark .text-slate-800 {
+  color: #f1f5f9;
+}
+
+.dark .text-slate-700 {
+  color: #cbd5e1;
+}
+
+.dark .text-slate-600 {
+  color: #94a3b8;
+}
+
+.dark .text-slate-500 {
+  color: #94a3b8;
+}
+
+.dark .border-slate-900 {
+  border-color: #38455d;
+}
+
+.dark .border-slate-200 {
+  border-color: #243046;
+}
+
+.dark .border-slate-300 {
+  border-color: #38455d;
+}
+
+/* Card shadows in dark mode: crisp deep black shadow */
+.dark [class*="shadow-\[2px_2px_0px_0px_rgba(15,23,42,1)\]"] {
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 0.8) !important;
+}
+
+.dark [class*="shadow-\[3px_3px_0px_0px_rgba(15,23,42,1)\]"] {
+  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 0.8) !important;
+}
+
+.dark [class*="shadow-\[4px_4px_0px_0px_rgba(15,23,42,1)\]"] {
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.8) !important;
+}
+
+.dark [class*="shadow-\[6px_6px_0px_0px_rgba(15,23,42,1)\]"] {
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Inputs and textareas */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark select {
+  background-color: #0b111e;
+  color: #f8fafc;
+  border-color: #38455d;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b;
+}
+
+/* Colorful container accents adapted for dark mode */
+.dark .bg-indigo-50 {
+  background-color: #1e1b4b;
+}
+.dark .text-indigo-900,
+.dark .text-indigo-950 {
+  color: #e0e7ff;
+}
+
+.dark .bg-emerald-50 {
+  background-color: #064e3b;
+}
+.dark .text-emerald-900,
+.dark .text-emerald-950 {
+  color: #a7f3d0;
+}
+
+.dark .bg-amber-50 {
+  background-color: #451a03;
+}
+.dark .text-amber-900,
+.dark .text-amber-950 {
+  color: #fde68a;
+}
+
+.dark .bg-rose-50 {
+  background-color: #4c0519;
+}
+.dark .text-rose-900,
+.dark .text-rose-950 {
+  color: #fecdd3;
+}
+
+.dark .bg-sky-50 {
+  background-color: #082f49;
+}
+.dark .text-sky-900,
+.dark .text-sky-950 {
+  color: #bae6fd;
+}
+
+.dark .bg-purple-50 {
+  background-color: #3b0764;
+}
+.dark .text-purple-900,
+.dark .text-purple-950 {
+  color: #e9d5ff;
+}
+
+.dark .bg-\[\#E2F5E9\] {
+  background-color: #064e3b;
+}
+
+.dark .bg-\[\#EBF0FE\] {
+  background-color: #1e1b4b;
+}
+
+.dark .bg-\[\#FEF6E9\] {
+  background-color: #451a03;
+}
