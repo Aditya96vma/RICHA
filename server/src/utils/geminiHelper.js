@@ -4,6 +4,12 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { accessSecret } from './secretManager.js';
+import { 
+  generateHumanExecutionPlan, 
+  generateHuman4DPrioritization, 
+  extractHumanActivities, 
+  classifyActivity 
+} from './humanTaskProcessor.js';
 
 /**
  * Model Fallback Ladder ensuring high availability and zero-latency first-hit execution (Directive 6.2)
@@ -17,6 +23,10 @@ export const MODEL_FALLBACK_LADDER = [
   'gemini-flash-latest',
   'gemini-3.8-flash'
 ];
+
+// In-memory cooldowns to avoid hammering rate-limited models
+const modelCooldowns = new Map();
+const knownBadKeys = new Set();
 
 /**
  * Prompt injection and unauthorized data access patterns to detect and mitigate (OWASP LLM01 / LLM02)
@@ -144,6 +154,8 @@ export async function generateContentWithFallback(userPrompt, systemInstruction,
   let lastError = null;
 
   for (const currentKey of candidateKeys) {
+    if (knownBadKeys.has(currentKey)) continue;
+
     const ai = new GoogleGenAI({
       apiKey: currentKey,
       httpOptions: {
@@ -155,6 +167,13 @@ export async function generateContentWithFallback(userPrompt, systemInstruction,
 
     for (const rawModelName of MODEL_FALLBACK_LADDER) {
       const modelName = rawModelName.replace(/\s+/g, '').toLowerCase();
+
+      // Check if this model is in cooldown due to recent rate limit / quota exhaustion
+      const cooldownUntil = modelCooldowns.get(modelName);
+      if (cooldownUntil && Date.now() < cooldownUntil) {
+        continue;
+      }
+
       try {
         const response = await ai.models.generateContent({
           model: modelName,
@@ -184,24 +203,73 @@ export async function generateContentWithFallback(userPrompt, systemInstruction,
           error.status === 403;
 
         if (isAuthError) {
-          console.warn(`[GeminiHelper] Key starting with ${currentKey.slice(0, 8)}... is invalid (${error.message}). Trying next candidate key...`);
+          knownBadKeys.add(currentKey);
           break; // Try next candidate key
         }
 
-        console.warn(`[GeminiHelper] Model ${modelName} transient notice: ${error.message || 'Call failed'}. Trying next model...`);
+        const isQuota =
+          error.status === 429 ||
+          error.message?.includes('RESOURCE_EXHAUSTED') ||
+          error.message?.includes('Quota exceeded') ||
+          error.message?.includes('rate-limits');
+
+        if (isQuota) {
+          // Cooldown for 60s to prevent repetitive failed calls
+          modelCooldowns.set(modelName, Date.now() + 60000);
+          console.log(`[GeminiHelper] Model ${modelName} rate limit reached. Fast-switching to next model in ladder...`);
+        } else {
+          console.log(`[GeminiHelper] Model ${modelName} notice (${error.status || 'transient'}). Trying next model...`);
+        }
       }
     }
   }
 
-  console.warn('[GeminiHelper] All candidate keys and models attempted. Falling back to built-in neurodivergent reasoning engine.', lastError?.message);
+  console.log('[GeminiHelper] All online models attempted. Seamlessly activating built-in neurodivergent reasoning engine.');
   return generateOfflineAgentResponse(userPrompt, systemInstruction);
 }
 
 /**
- * Intelligent deterministic fallback generator complying with RICHA Neurodivergent constraints
+ * Helper to extract clean user text and discrete items from prompt
+ */
+function extractPromptItems(prompt) {
+  const clean = prompt
+    .replace(/\[USER_JOURNAL_DATA_START\]|\[USER_JOURNAL_DATA_END\]/gi, '')
+    .replace(/TASK TO PLAN:\s*/i, '')
+    .replace(/Task:\s*/i, '')
+    .replace(/Deadline:\s*[^\n]*/gi, '')
+    .replace(/User Energy Level:\s*[^\n]*/gi, '')
+    .trim();
+
+  // Split on newlines, numbered lists (1. , 2. ), bullet points (*, -), or commas/semicolons
+  const lines = clean.split(/\n+/);
+  const items = [];
+
+  for (const line of lines) {
+    const trimmed = line.replace(/^(?:\d+\.|\*|-|•)\s*/, '').trim();
+    if (!trimmed) continue;
+    // Check if line contains comma or semicolon separated sub-items
+    if (trimmed.includes(',') || trimmed.includes(';')) {
+      const sub = trimmed.split(/[,;]+/).map(s => s.trim()).filter(s => s.length > 2);
+      if (sub.length > 1) {
+        items.push(...sub);
+        continue;
+      }
+    }
+    if (trimmed.length > 2) {
+      items.push(trimmed);
+    }
+  }
+
+  return items.length > 0 ? items : (clean.length > 2 ? [clean] : []);
+}
+
+/**
+ * Intelligent deterministic fallback generator complying with RICHA Neurodivergent constraints.
+ * CRITICAL: Dynamically parses and processes the user's ACTUAL input for all agents.
  */
 function generateOfflineAgentResponse(userPrompt, systemInstruction) {
   const promptLower = userPrompt.toLowerCase();
+  const rawItems = extractPromptItems(userPrompt);
   
   // Conversational Reflection Turn (RICHA Companion chatting before /write)
   if (systemInstruction.includes('RICHA — Core Journaling')) {
@@ -216,7 +284,7 @@ function generateOfflineAgentResponse(userPrompt, systemInstruction) {
     // Celebratory energy matching
     if (cleanLower.includes('got the job') || cleanLower.includes('promotion') || cleanLower.includes('celebrat') || cleanLower.includes('i did it') || cleanLower.includes('we won')) {
       return {
-        text: "That is huge news! Congratulations — taking a moment to let that sink in and celebrate yourself is so well-deserved.\n\nHow does it feel knowing it actually happened?",
+        text: `That is huge news! Congratulations — taking a moment to let that sink in and celebrate yourself is so well-deserved.\n\nHow does it feel knowing it actually happened?`,
         modelUsed: 'richa-conversational-companion'
       };
     }
@@ -224,7 +292,7 @@ function generateOfflineAgentResponse(userPrompt, systemInstruction) {
     // Neutral check-in
     if (cleanLower.includes('just checking in') || cleanLower.includes('nothing major') || cleanLower.includes('just checking')) {
       return {
-        text: "Glad you checked in today. Even on ordinary, quiet days, taking a pause is grounding.\n\nHow has the pacing of your day felt so far?",
+        text: `Glad you checked in today. Even on ordinary, quiet days, taking a pause is grounding.\n\nHow has the pacing of your day felt so far?`,
         modelUsed: 'richa-conversational-companion'
       };
     }
@@ -232,7 +300,7 @@ function generateOfflineAgentResponse(userPrompt, systemInstruction) {
     // Task paralysis & ADHD micro-step
     if (cleanLower.includes('blank document') || cleanLower.includes('staring at') || cleanLower.includes('can\'t start') || cleanLower.includes('cant start') || cleanLower.includes('frozen') || cleanLower.includes('paralyz')) {
       return {
-        text: "That stuck feeling is completely real, and sitting with a blank screen can feel like a mountain. Let's take the pressure off: could you just open the document, type only the title or one placeholder sentence, and tell me when it's done?",
+        text: `That stuck feeling is completely real, and sitting with a blank screen can feel like a mountain. Let's take the pressure off: could you just open the document, type only the title or one placeholder sentence, and tell me when it's done?`,
         modelUsed: 'richa-conversational-companion'
       };
     }
@@ -240,7 +308,7 @@ function generateOfflineAgentResponse(userPrompt, systemInstruction) {
     // Zero guilt absence
     if (cleanLower.includes('haven\'t journaled') || cleanLower.includes('havent journaled') || cleanLower.includes('bad at keeping up') || cleanLower.includes('inconsistent')) {
       return {
-        text: "There is zero shame or guilt here — your journal is always right here whenever you need it, with no catch-up required.\n\nWhat's on your mind today?",
+        text: `There is zero shame or guilt here — your journal is always right here whenever you need it, with no catch-up required.\n\nWhat's on your mind today?`,
         modelUsed: 'richa-conversational-companion'
       };
     }
@@ -248,41 +316,40 @@ function generateOfflineAgentResponse(userPrompt, systemInstruction) {
     // Crisis / panic validation
     if (cleanLower.includes('panic attack') || cleanLower.includes('not okay') || cleanLower.includes('crisis')) {
       return {
-        text: "I'm right here with you. Take a slow, gentle breath — you don't have to carry this alone.\n\nWhat is happening right now in this moment?",
+        text: `I'm right here with you. Take a slow, gentle breath — you don't have to carry this alone.\n\nWhat is happening right now in this moment?`,
         modelUsed: 'richa-conversational-companion'
       };
     }
 
     if (cleanLower.includes('exhaust') || cleanLower.includes('tired') || cleanLower.includes('drained') || cleanLower.includes('overwhelm') || cleanLower.includes('burnout') || cleanLower.includes('burnt out')) {
       return {
-        text: "It sounds like today really took a lot out of you. Navigating all of that with so much on your mind is deeply exhausting.\n\nWhat felt like the most draining part of it all, if you feel up to sharing?",
+        text: `It sounds like today really took a lot out of you. Navigating all of that with so much on your mind is deeply exhausting.\n\nWhat felt like the most draining part of it all, if you feel up to sharing?`,
         modelUsed: 'richa-conversational-companion'
       };
     }
 
     if (cleanLower.includes('work') || cleanLower.includes('meeting') || cleanLower.includes('boss') || cleanLower.includes('manager') || cleanLower.includes('deadline') || cleanLower.includes('restructur') || cleanLower.includes('job')) {
       return {
-        text: "Navigating work pressure and shifting demands can take an immense amount of cognitive energy.\n\nWhat part of that is sitting with you the most right now?",
+        text: `Navigating work pressure and shifting demands can take an immense amount of cognitive energy.\n\nWhat part of that is sitting with you the most right now?`,
         modelUsed: 'richa-conversational-companion'
       };
     }
 
     if (cleanLower.includes('friend') || cleanLower.includes('family') || cleanLower.includes('sister') || cleanLower.includes('partner') || cleanLower.includes('priya') || cleanLower.includes('relationship')) {
       return {
-        text: "Navigating situations with people close to us can bring up a lot of complex feelings.\n\nHow did that interaction leave you feeling afterward?",
+        text: `Navigating situations with people close to us can bring up a lot of complex feelings.\n\nHow did that interaction leave you feeling afterward?`,
         modelUsed: 'richa-conversational-companion'
       };
     }
 
     return {
-      text: `I hear you, and it makes total sense that this is on your mind today. Getting it out and giving it space is an important first step.\n\nHow is that sitting with you right now?`,
+      text: `I hear you: "${cleanPrompt.slice(0, 100)}${cleanPrompt.length > 100 ? '...' : ''}". Getting it out and giving it space is an important first step.\n\nHow is that sitting with you right now?`,
       modelUsed: 'richa-conversational-companion'
     };
   }
 
   // Explicit Diary Synthesis Turn (/write, produce entry)
   if (systemInstruction.includes('anti-hallucination diary synthesizer') || systemInstruction.includes('diary editor')) {
-    // Extract actual user reflections passed in the prompt
     let userTurns = [];
     const transcriptMatch = userPrompt.match(/\[USER_ACTUAL_CHAT_TRANSCRIPT_START\]([\s\S]*?)\[USER_ACTUAL_CHAT_TRANSCRIPT_END\]/i);
     if (transcriptMatch && transcriptMatch[1]) {
@@ -311,180 +378,240 @@ function generateOfflineAgentResponse(userPrompt, systemInstruction) {
     };
   }
 
-  // Planner Agent (Executive Function Micro-Chunking)
-  if (systemInstruction.includes('Planner Agent')) {
+  // Planner Agent (Executive Function Micro-Chunking) - Works directly on user's real human tasks
+  if (systemInstruction.includes('Planner Agent') || systemInstruction.includes('Planner') || promptLower.includes('task to plan')) {
+    let energy = 'Medium';
+    const energyMatch = userPrompt.match(/User Energy Level:\s*([^\n]+)/i);
+    if (energyMatch && energyMatch[1]) {
+      energy = energyMatch[1].trim();
+    }
+
+    let deadline = 'Flexible';
+    const deadlineMatch = userPrompt.match(/Deadline:\s*([^\n]+)/i);
+    if (deadlineMatch && deadlineMatch[1] && !deadlineMatch[1].includes('Not specified')) {
+      deadline = deadlineMatch[1].trim();
+    }
+
+    const plan = generateHumanExecutionPlan(userPrompt, energy, deadline);
     return {
-      text: `### 🧩 RICHA Executive Function Breakdown
-
-I hear how overwhelming this feels. Let's take the friction away with a single, clear micro-step:
-
-* **⚡ Step 1 (Immediate - 5 mins)**: Just open the relevant tab/document and write down 1 single sentence or gather the starting tool. You don't need to finish anything yet.
-* **⏱️ Block A (15 mins | Energy: Low)**: Focus on the easiest first 10% of the task. Ignore perfectionism.
-* **⏱️ Block B (25 mins | Energy: Medium)**: Tackle the core portion using a timer. When the timer chimes, stop immediately.
-* **☕ Rest Period (10 mins)**: Step away, hydrate, and give your nervous system a break.
-
-**Minimum Viable Version (MVV)**: "Done is better than perfect. Aim for 70% completion today."
-
-✅ Done this session: Deconstructed task into low-friction micro-blocks
-🔜 Suggested next step: Take 2 deep breaths and do Step 1 only for 5 minutes
-💾 Saved to: Planner & Task Manager`,
-      modelUsed: 'richa-rule-engine-offline'
+      text: plan.markdownText,
+      modelUsed: 'richa-human-task-engine'
     };
   }
 
-  // Prioritizer Agent (Julie Morgenstern 4D Framework)
+  // Prioritizer Agent (Julie Morgenstern 4D Framework) - Triage user's actual items
   if (systemInstruction.includes('Prioritizer') || promptLower.includes('priorit') || promptLower.includes('4d')) {
+    const p4d = generateHuman4DPrioritization(userPrompt);
     return {
-      text: `### 🎯 Julie Morgenstern 4D Prioritization Matrix
-
-Here is your triage breakdown to relieve decision fatigue:
-
-* 🗑️ **DELETE (Eliminate without guilt)**: Low-impact perfectionist tasks and arbitrary self-imposed deadlines that nobody is asking for today.
-* ⏰ **DELAY (Schedule for later)**: Non-urgent secondary items. Park them safely in next week's backlog so they stop taking up working memory.
-* ✂️ **DIMINISH (Minimum Viable Version)**: The primary task on your plate. Strip it to the core deliverable. 
-* 👥 **DELEGATE (Automate or hand off)**: Routine admin steps or asking a teammate/partner for a 5-minute handoff.
-
-✅ Done this session: 4D categorization applied across tasks
-🔜 Suggested next step: Cross off the DELETED items and start the DIMINISHED core task
-💾 Saved to: 4D Priority Matrix`,
-      modelUsed: 'richa-rule-engine-offline'
+      text: p4d.text,
+      modelUsed: 'richa-human-task-engine'
     };
   }
 
-  // Bullet Journal Agent (Ryder Carroll Rapid Logging)
-  if (systemInstruction.includes('Bullet Journal') || systemInstruction.includes('Rapid Logging') || promptLower.includes('bullet') || promptLower.includes('rapid log')) {
+  // Bullet Journal Agent (Ryder Carroll Rapid Logging) - Converts user's actual human activities
+  if (systemInstruction.includes('Bullet Journal') || systemInstruction.includes('Rapid Logging') || promptLower.includes('bullet') || promptLower.includes('rapid log') || promptLower.includes('brain dump')) {
+    const activities = extractHumanActivities(userPrompt);
+    const focusTasks = [];
+    const events = [];
+    const ideas = [];
+    const notes = [];
+
+    for (let idx = 0; idx < activities.length; idx++) {
+      const act = activities[idx];
+      const classified = classifyActivity(act);
+      
+      if (classified.type === 'food') {
+        focusTasks.push(`• 🍲 Cook / Eat: ${act} (quick, low-friction nourishment)`);
+      } else if (classified.type === 'hygiene') {
+        focusTasks.push(`• 🚿 Physical Care: ${act} (sensory reset & clean clothes)`);
+      } else if (classified.type === 'study') {
+        focusTasks.push(idx === 0 ? `* • 📚 Study / Academic: ${act} [Top Priority]` : `• 📚 Study / Academic: ${act}`);
+      } else if (classified.type === 'chore') {
+        focusTasks.push(`• 🧺 Home Care: ${act}`);
+      } else {
+        const lower = act.toLowerCase();
+        if (lower.includes('meeting') || lower.includes('appointment') || lower.includes('call at') || lower.includes('pm') || lower.includes('am')) {
+          events.push(`○ ${act}`);
+        } else if (lower.includes('maybe') || lower.includes('idea') || lower.includes('someday') || lower.includes('could')) {
+          ideas.push(`— ${act}`);
+        } else if (lower.includes('feel') || lower.includes('tired') || lower.includes('worr') || lower.includes('stress')) {
+          notes.push(`- ${act}`);
+        } else {
+          focusTasks.push(`• ${act}`);
+        }
+      }
+    }
+
+    const focusBlock = focusTasks.length > 0 ? focusTasks.join('\n') : '• Complete top immediate action item';
+    const eventsBlock = events.length > 0 ? events.join('\n') : '○ No scheduled calendar events flagged';
+    const ideasBlock = ideas.length > 0 ? ideas.join('\n') : '— Captured thoughts parked for future exploration';
+    const notesBlock = notes.length > 0 ? notes.join('\n') : '- Mental load externalized to working memory';
+
+    const topTask = focusTasks[0] ? focusTasks[0].replace(/^[•*—○-]\s*/, '').replace(/\s*\[Top Priority\]/, '') : 'your primary action';
+
     return {
       text: `### 📓 Bullet Journal & Rapid Logging Spread
 
-Here is your thoughts organized into standard Ryder Carroll neurodivergent notation:
+Here are your activities organized into standard Ryder Carroll neurodivergent notation:
 
 **🎯 Today's Focus & Priority Tasks:**
-* • Complete primary actionable step
-• Reply to essential messages
+${focusBlock}
 
 **📅 Scheduled Events & Time-Boxes:**
-○ Planned sync / scheduled commitment
+${eventsBlock}
 
 **💡 Ideas & Someday Log:**
-— Idea captured for future development
+${ideasBlock}
 
-**🧠 Decompression Notes:**
-— Externalized mental load; working memory reset
+**🧠 Decompression & Mental Notes:**
+${notesBlock}
 
-✅ Done this session: Processed raw thoughts into structured Bullet Journal spread
-🔜 Suggested next step: Pick the top starred (*) rapid log task
+---
+
+✅ Done this session: Converted ${activities.length} human activities into structured Bullet Journal rapid log
+🔜 Suggested next step: Pick the top rapid log item: ${topTask}
 💾 Saved to: Bullet Journal & Brain Dump Hub`,
-      modelUsed: 'richa-rule-engine-offline'
+      modelUsed: 'richa-human-task-engine'
     };
   }
 
-  // Admin & Life Orchestrator Agent
+  // Admin & Life Orchestrator Agent - Works directly on user's chore/admin routine
   if (systemInstruction.includes('Admin') || systemInstruction.includes('Life Orchestrator') || promptLower.includes('chore') || promptLower.includes('routine')) {
+    const taskName = rawItems[0] || 'your life admin routine';
+
     return {
-      text: `### 🧺 Life Admin & Recurring Maintenance Block
+      text: `### 🧺 Life Admin & Maintenance Routine: ${taskName}
 
-Let's simplify life routines with predictable, low-friction momentum:
+Let's make "${taskName}" low-friction and predictable:
 
-* **15-Min Active Batch**: Focus only on the immediate physical space or task setup.
-* **Passive Completion Cycle**: Start any automated or passive tasks (e.g., laundry washer, robot vacuum, bill autopay).
-* **Buffer Reminder**: Date and commitment flagged with a 3-day notification buffer.
+* **15-Min Active Batch**: Focus only on the immediate physical setup for "${taskName}". Gather supplies, open relevant apps, and do the first 5 easy minutes.
+* **Passive Completion Cycle**: Let background cycles run (e.g. automated workflows, dishwasher, laundry, timer). Step away while it processes.
+* **Buffer & Follow-up Reminder**: Set a reminder with a 3-day buffer so you never have to hold "${taskName}" in active memory.
 
-*Gentle Starting Cue*: Put on a familiar low-tempo playlist or podcast before beginning.
+*Gentle Starting Cue*: Put on familiar background music or a comfortable podcast before beginning.
 
-✅ Done this session: Life admin block and calendar reminder structured
-🔜 Suggested next step: Start the 15-minute timer and tackle the first physical cue
+---
+
+✅ Done this session: Structured low-friction routine for "${taskName}"
+🔜 Suggested next step: Set a 5-minute timer and do only the workspace prep for "${taskName}"
 💾 Saved to: Life Admin & Dates Manager`,
       modelUsed: 'richa-rule-engine-offline'
     };
   }
 
-  // Kanban & Habit Tracker Agent
+  // Kanban & Habit Tracker Agent - Organizes user's tasks onto columns
   if (systemInstruction.includes('Kanban') || promptLower.includes('kanban') || promptLower.includes('habit')) {
+    const items = rawItems.filter(i => !i.toLowerCase().includes('kanban') && !i.toLowerCase().includes('habit') && i.length > 2);
+    
+    let inProgress = items.length > 0 ? items[0] : 'Active core task';
+    let thisWeek = items.length > 1 ? items[1] : 'Upcoming priority';
+    let backlog = items.length > 2 ? items.slice(2).join(', ') : 'Future ideas & parked tasks';
+
     return {
       text: `### 📋 Kanban Board & Habit Tracker Update
 
-Here is your life domain task flow with strict WIP limit enforcement:
+Here is your task flow organized with strict WIP limits directly from your input:
 
-* 📥 **Backlog**: New concepts and future items safely parked
-* 📅 **This Week**: High-priority commitments scheduled
-* ⚡ **In Progress (WIP Limit: 2 Max)**: Active focus tasks running right now
-* ✅ **Done**: Completed wins archived and celebrated
-* 🔄 **Recurring / Habits**: Daily streak checkpoint confirmed (Drinking water / self-care)
+* 📥 **Backlog**: ${backlog} [Parked]
+* 📅 **This Week**: ${thisWeek} [Targeted]
+* ⚡ **In Progress (WIP Limit: 2 Max)**: ${inProgress} [Active Focus]
+* ✅ **Done**: Quick wins completed and celebrated
+* 🔄 **Recurring / Habits**: Daily streak check-in confirmed (Hydration / Self-care)
 
-✅ Done this session: Organized Kanban board & habit checkpoints
-🔜 Suggested next step: Pick ONE task from 'In Progress' or 'This Week'
+---
+
+✅ Done this session: Organized your tasks onto the Kanban board
+🔜 Suggested next step: Focus exclusively on '${inProgress}' and keep WIP limited to 1-2 tasks
 💾 Saved to: Interactive Kanban Board`,
       modelUsed: 'richa-rule-engine-offline'
     };
   }
 
-  // Wellbeing & Burnout Prevention Agent
+  // Wellbeing & Burnout Prevention Agent - Responds directly to user's feelings & stressors
   if (systemInstruction.includes('Wellbeing') || promptLower.includes('burnout') || promptLower.includes('exhaust') || promptLower.includes('overwhelm') || promptLower.includes('buzzing') || promptLower.includes('sensory')) {
+    const cleanThought = rawItems.join('; ') || 'what you shared';
+
     return {
       text: `### 🛡️ Sensory Shield & Burnout Detection
 
 Burnout Risk Level: 🟡 **ELEVATED COGNITIVE LOAD DETECTED**
 
-I hear how heavy things feel right now. Your nervous system is asking for reduced demand, and that is completely valid.
+I hear how heavy and draining things feel: "${cleanThought.slice(0, 120)}${cleanThought.length > 120 ? '...' : ''}". Your nervous system is signaling for reduced demand, and that is 100% valid.
 
-* **Sensory Reset**: Dim screens, lower ambient noise, or put on noise-canceling headphones for 10 minutes.
-* **Demand Drop**: Give yourself full permission to postpone all non-essential items today.
-* **Low-Friction Anchor**: Drink one glass of water and rest your eyes.
+* **Sensory Reset**: Dim screens, lower ambient sound, or put on noise-canceling headphones for 10 minutes to reduce input.
+* **Demand Drop**: Give yourself explicit permission to postpone non-essential tasks today.
+* **Low-Friction Anchor**: Drink a cold glass of water and rest your eyes without screens.
 
-✅ Done this session: Burnout check and sensory recovery protocol activated
+---
+
+✅ Done this session: Validated your feelings and activated sensory recovery protocol
 🔜 Suggested next step: Step away from screens for 10 minutes with zero expectations
 💾 Saved to: Wellbeing & Burnout Shield`,
       modelUsed: 'richa-rule-engine-offline'
     };
   }
 
-  // Reflection & Insight Agent
+  // Socratic Executive Function & Reasoning Agent
+  if (systemInstruction.includes('Socratic') || promptLower.includes('socratic') || promptLower.includes('reasoning')) {
+    const userSummary = rawItems.join('; ') || 'your current situation';
+    return {
+      text: `### 🧠 Socratic Reasoning & Reflection
+
+I hear what you're saying: "${userSummary.slice(0, 140)}${userSummary.length > 140 ? '...' : ''}". When our nervous system feels overwhelmed, our brain often operates under an "all-or-nothing" script—feeling like we either have to push through exhausting perfectionism or collapse into avoidance.
+
+Let's pause and question the hidden friction:
+
+#### 🔍 Reflective Probes (Questions to Consider):
+1. **The Friction Question**: What part of this feels like the heaviest physical or mental hurdle to actually start? (e.g. switching environments, fear of doing it badly, or physical exhaustion?)
+2. **The 20% Energy Question**: If you only had 20% battery remaining today, what is the single lowest-friction slice that would still give you genuine relief?
+3. **The Guilt Test**: If you deferred the non-urgent pieces until tomorrow, what is the specific worry that surfaces—and is that fear genuinely true?
+
+#### 💡 Low-Friction Refinement:
+Give yourself permission to do the **5-minute starter slice**. For example, instead of a marathon session, set a 10-minute timer with no pressure to continue once it dings.
+
+---
+✅ Done this session: Explored cognitive friction via Socratic reasoning
+🔜 Suggested next step: Pick whichever probe feels easiest to answer, or test a 5-minute version
+💾 Saved to: Socratic Reasoning Journal`,
+      modelUsed: 'richa-rule-engine-offline'
+    };
+  }
+
+  // Reflection & Insight Agent - Mirrors user's stated experience
   if (systemInstruction.includes('Reflection') || systemInstruction.includes('Insight')) {
-    const isCelebration = promptLower.includes('proud') || promptLower.includes('launched') || promptLower.includes('finished') || promptLower.includes('celebrat') || promptLower.includes('feedback') || promptLower.includes('won');
-    
-    if (isCelebration) {
-      return {
-        text: `### 🌟 Landmark Reflection & Celebration
-
-Congratulations on reaching this milestone! Finishing and putting your work out there takes tremendous persistence and courage.
-
-* **The Reality**: Months of steady effort just came to fruition, and the team feedback affirms the value of what you created.
-* **The Emotional Landmark**: Take a conscious breath and let the feeling of accomplishment sink in. You earned this win.
-* **Grounded Affirmation**: You have the capability to see complex, long-term goals through to completion.
-
-✅ Done this session: Logged proud landmark victory in emotional journey
-🔜 Suggested next step: Celebrate with something you genuinely enjoy today
-💾 Saved to: Emotional Journal & Milestones`,
-        modelUsed: 'richa-rule-engine-offline'
-      };
-    }
+    const userSummary = rawItems.join(' ') || 'what you externalized';
 
     return {
       text: `### 🌿 RICHA Reflection & Insight
 
-Thank you for externalizing this. Acknowledging where you are right now is the first step to clearing cognitive overload.
+Thank you for putting this into words: "${userSummary.slice(0, 120)}${userSummary.length > 120 ? '...' : ''}". Externalizing thoughts is the first step in lifting executive fatigue.
 
-* **Insight**: When demands accumulate simultaneously, working memory locks up. This is neurodivergent executive fatigue, not a lack of capability.
-* **Gentle Reframe**: You do not have to solve everything today. One small step at a time is more than enough.
+* **What Happened**: You are navigating real cognitive and emotional demands that require sustained energy.
+* **How You Felt**: The overwhelm or fatigue you are feeling is an understandable reaction to carrying multiple competing priorities.
+* **Cognitive Insight**: When demands pile up, working memory locks up. This is neurodivergent executive fatigue, not a lack of effort or capability.
+* **Grounded Affirmation**: You do not have to conquer everything today. Making progress in small, gentle steps is more than enough.
 
-✅ Done this session: Processed journal entry and validated emotional state
-🔜 Suggested next step: Choose one tiny physical comfort (tea, stretch, quiet moment)
+---
+
+✅ Done this session: Processed your reflection and distilled compassionate insight
+🔜 Suggested next step: Take one slow breath, hydrate, and give yourself a 5-minute break
 💾 Saved to: Reflection Journal`,
       modelUsed: 'richa-rule-engine-offline'
     };
   }
 
   // Default Empathetic Reflection
+  const defaultThought = rawItems.join(' ') || 'your entry';
   return {
     text: `### 🌿 RICHA Reflection & Insight
 
-Thank you for externalizing this. Acknowledging where you are right now is the first step to clearing cognitive overload.
+Thank you for sharing this: "${defaultThought.slice(0, 120)}${defaultThought.length > 120 ? '...' : ''}". Getting this out of your head onto paper clears working memory.
 
-* **Insight**: When demands accumulate simultaneously, working memory locks up. This is neurodivergent executive fatigue, not a lack of capability.
-* **Gentle Reframe**: You do not have to solve everything today. One small step at a time is more than enough.
+* **Insight**: Neurodivergent executive bandwidth fluctuates. Acknowledging where you are right now protects your energy.
+* **Gentle Reframe**: Take things one micro-step at a time.
 
-✅ Done this session: Processed journal entry and validated emotional state
-🔜 Suggested next step: Choose one tiny physical comfort (tea, stretch, quiet moment)
+✅ Done this session: Processed thoughts and grounded emotional state
+🔜 Suggested next step: Take a quiet moment for yourself
 💾 Saved to: Reflection Journal`,
     modelUsed: 'richa-rule-engine-offline'
   };

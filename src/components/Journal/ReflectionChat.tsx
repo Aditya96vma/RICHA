@@ -7,6 +7,11 @@ import { useAuth } from '../../hooks/useAuth';
 import { sanitizeHTML } from '../../lib/sanitize';
 import { ErrorBanner } from '../shared/ErrorBanner';
 import {
+  getUserStorageItem,
+  setUserStorageItem,
+  removeUserStorageItem
+} from '../../utils/userStorage';
+import {
   Send,
   Sparkles,
   Bot,
@@ -102,11 +107,13 @@ interface UserMemory {
 }
 
 interface ReflectionChatProps {
-  onNavigateTab?: (tab: 'overview' | 'chat' | 'planner' | 'prioritizer' | 'kanban' | 'braindump' | 'habits' | 'admin' | 'wellbeing') => void;
+  onNavigateTab?: (tab: 'overview' | 'chat' | 'planner' | 'prioritizer' | 'kanban' | 'braindump' | 'habits' | 'admin' | 'wellbeing', payload?: any) => void;
+  handoffData?: any;
 }
 
-export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
+export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatProps = {}) {
   const { user, getIdToken } = useAuth();
+  const uid = user?.uid;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
@@ -232,7 +239,7 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
     // Check if user has already journaled today
     const checkReminder = () => {
       const todayStr = new Date().toDateString();
-      const lastSessionDate = localStorage.getItem('richa_last_session_date');
+      const lastSessionDate = getUserStorageItem(uid, 'last_session_date');
       const reminderDismissed = sessionStorage.getItem('richa_reminder_dismissed');
 
       if (lastSessionDate !== todayStr && !reminderDismissed) {
@@ -351,7 +358,7 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
     let isMounted = true;
 
     // Restore locally preserved draft keystrokes (Improvement J - Offline Protection)
-    const savedDraft = localStorage.getItem('richa_draft_keystroke');
+    const savedDraft = getUserStorageItem(uid, 'draft_keystroke');
     if (savedDraft) {
       setInputValue(savedDraft);
     }
@@ -549,7 +556,7 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
       
       // Track session date to satisfy daily reminder check
       const todayStr = new Date().toDateString();
-      localStorage.setItem('richa_last_session_date', todayStr);
+      setUserStorageItem(uid, 'last_session_date', todayStr);
       setShowDueReminderBanner(false);
 
       const resolvedOverride = overrideAgentParam || selectedAgentOverride || undefined;
@@ -608,7 +615,7 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
       }
 
       // Clear locally preserved draft on successful transmission
-      localStorage.removeItem('richa_draft_keystroke');
+      removeUserStorageItem(uid, 'draft_keystroke');
 
       // Refresh memory in background
       fetchMemoryVault();
@@ -1253,7 +1260,7 @@ export function ReflectionChat({ onNavigateTab }: ReflectionChatProps = {}) {
             onChange={(e) => {
               const val = e.target.value;
               setInputValue(val);
-              localStorage.setItem('richa_draft_keystroke', val);
+              setUserStorageItem(uid, 'draft_keystroke', val);
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {

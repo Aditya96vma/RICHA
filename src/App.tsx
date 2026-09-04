@@ -25,7 +25,15 @@ function AppContent() {
 
   // If user is authenticated, default to dashboard unless explicitly logged out
   if (user || view === 'dashboard') {
-    return <Dashboard onLogout={() => setView('landing')} />;
+    const sessionKey = user?.uid || 'guest-session';
+    return (
+      <Dashboard
+        key={sessionKey}
+        onLogout={() => {
+          setView('landing');
+        }}
+      />
+    );
   }
 
   return <Landing onNavigateToDashboard={() => setView('dashboard')} />;

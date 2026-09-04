@@ -112,7 +112,7 @@ export function BrainDump() {
         {/* Left Column: Raw Brain Dump */}
         <div className="bg-white rounded-2xl border-2 border-slate-900 p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-extrabold text-slate-900 flex items-center gap-2 uppercase tracking-wider">
                 <FileText className="w-4 h-4 text-slate-600" />
                 <span>Raw Mental Download</span>
@@ -125,6 +125,36 @@ export function BrainDump() {
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Clear</span>
               </button>
+            </div>
+
+            {/* Presets & Suggestions */}
+            <div className="mb-3">
+              <p className="text-[11px] font-bold text-slate-500 mb-1.5">Common brain dump patterns (click to populate):</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  {
+                    label: '⚡ Monday Morning Scramble',
+                    val: 'Need to submit timesheet before noon\nSync call with Alex at 2pm\nBuy oat milk and coffee beans\nCar makes a squeaking sound when braking\nFeeling overwhelmed by notifications\nMaybe look into Notion template for budget'
+                  },
+                  {
+                    label: '🛋️ Weekend Reset',
+                    val: 'Clean bathroom sink and mirror\nTake dog to the vet on Saturday 10am\nIdea: design minimalist wooden desk shelf\nForgot to return library book\nExhausted from this work week\nCall mom Sunday evening'
+                  },
+                  {
+                    label: '🚀 Project Launch Chaos',
+                    val: 'Push final code commit to staging\nReview QA feedback document\nMeeting with client at 4:30pm\nOrder lunch for team\nRemember to stretch and hydrate\nIdea: write blog post summarizing architecture'
+                  }
+                ].map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => setRawText(preset.val)}
+                    className="text-[10px] font-extrabold bg-slate-100 hover:bg-indigo-100 text-slate-800 border border-slate-300 rounded-lg px-2.5 py-1 transition-all"
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <textarea

@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import chatRouter from './routes/chat.js';
 import kanbanRouter from './routes/kanban.js';
 import dataRouter from './routes/data.js';
+import socraticRouter from './routes/socratic.js';
 import { getCandidateApiKeys } from './utils/geminiHelper.js';
 
 export function createServerApp() {
@@ -69,6 +70,7 @@ export function createServerApp() {
   app.use('/api/chat', chatRouter);
   app.use('/api/kanban', kanbanRouter);
   app.use('/api/data', dataRouter);
+  app.use('/api/socratic', socraticRouter);
 
   // Global Error Handler
   app.use((err, req, res, next) => {

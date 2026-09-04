@@ -10,12 +10,14 @@ import { reflectionAgent } from '../agents/reflectionAgent.js';
 import { kanbanAgent } from '../agents/kanbanAgent.js';
 import { bulletJournalAgent } from '../agents/bulletJournalAgent.js';
 import { richaCoreJournalAgent } from '../agents/richaCoreJournalAgent.js';
+import { socraticAgent } from '../agents/socraticAgent.js';
 import { saveDocument } from '../utils/firestoreHelper.js';
 
 export const ALL_AGENT_METADATA = [
   { id: 'companion', label: 'RICHA Companion', intent: 'journal_entry', desc: 'Active listening, conversational memory, voice diary' },
   { id: 'planner', label: 'Planner Agent', intent: 'planning_request', desc: 'Executive function scaffolding, micro-steps, time blindness' },
   { id: 'prioritizer', label: '4D Prioritizer', intent: 'review_request', desc: 'Julie Morgenstern 4D triage: Delete, Delay, Diminish, Delegate' },
+  { id: 'socratic', label: 'Socratic Coach', intent: 'socratic_reasoning', desc: 'Socratic questioning, cognitive friction inquiry, unblocking freeze' },
   { id: 'wellbeing', label: 'Sensory Shield', intent: 'burnout_signal', desc: 'Acute sensory decompression, soothing anchors, zero clutter' },
   { id: 'braindump', label: 'Bullet Log', intent: 'brain_dump', desc: 'Rapid bullet journaling, brain dump synthesis, daily spread' },
   { id: 'kanban', label: 'Kanban & Habits', intent: 'kanban_update', desc: 'WIP limit protection, stagnation detection, habit tracking' },
@@ -253,6 +255,9 @@ async function executeSingleAgent(intent, userContent, uid, history, provider, o
 
     case 'brain_dump':
       return await bulletJournalAgent(contentToSend, uid, history, provider);
+
+    case 'socratic_reasoning':
+      return await socraticAgent(contentToSend, {}, uid, history, provider);
 
     case 'emotional_reflection':
     case 'journal_entry':

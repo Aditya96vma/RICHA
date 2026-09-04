@@ -24,7 +24,7 @@ import {
 import { DashboardTab } from '../../pages/Dashboard';
 
 interface BentoOverviewProps {
-  onNavigateTab: (tab: DashboardTab) => void;
+  onNavigateTab: (tab: DashboardTab, payload?: any) => void;
 }
 
 interface JournalEntry {

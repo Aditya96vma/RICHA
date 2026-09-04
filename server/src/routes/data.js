@@ -13,7 +13,8 @@ import {
   dateSchema,
   brainDumpSchema
 } from '../middleware/inputValidator.js';
-import { saveDocument, listDocuments, deleteDocument, getDocument } from '../utils/firestoreHelper.js';
+import { saveDocument, listDocuments, deleteDocument, getDocument, purgeUserData } from '../utils/firestoreHelper.js';
+import { generateContentWithFallback } from '../utils/geminiHelper.js';
 import {
   getUserMemory,
   forgetMemoryItem,
@@ -49,7 +50,7 @@ router.get('/profile/memory', async (req, res) => {
 router.get('/:collectionName', async (req, res) => {
   const uid = req.user.uid;
   const { collectionName } = req.params;
-  const allowedCollections = ['journal', 'tasks', 'kanban', 'habits', 'admin', 'dates', 'braindump', 'sessions'];
+  const allowedCollections = ['journal', 'tasks', 'kanban', 'habits', 'admin', 'dates', 'braindump', 'sessions', 'socratic_sessions', 'prioritizer', 'synthesized_journal', 'planner'];
 
   if (!allowedCollections.includes(collectionName)) {
     return res.status(400).json({ error: 'Invalid collection specified.' });
@@ -219,6 +220,36 @@ router.post('/profile/memory/clear', async (req, res) => {
 });
 
 /**
+ * POST /api/data/user/purge-session
+ * Completely purges all stored documents and in-memory caches for the authenticated user.
+ * Triggered on logout for guests/sandbox users or when user requests session reset.
+ */
+router.post('/user/purge-session', async (req, res) => {
+  const uid = req.user.uid;
+  try {
+    await purgeUserData(uid);
+    return res.json({ success: true, message: `Session data purged for ${uid}` });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/data/planner
+ * Persists the user's active plan
+ */
+router.post('/planner', async (req, res) => {
+  const uid = req.user.uid;
+  const docId = req.body?.id || 'active_plan';
+  try {
+    await saveDocument(uid, 'planner', docId, req.body);
+    return res.status(201).json({ success: true, id: docId });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * GET /api/data/export/all
  * Full-fidelity export of all journal entries, memories, and reflections (Improvement L)
  */
@@ -315,6 +346,87 @@ router.get('/timeline', async (req, res) => {
     const events = await listDocuments(uid, 'session_events', limit, 'timestamp', 'desc');
     return res.json({ success: true, events });
   } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/data/prioritizer
+ * Saves a 4D Prioritizer session or triage result
+ */
+router.post('/prioritizer', async (req, res) => {
+  const uid = req.user.uid;
+  const docId = `prioritizer_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const { rawText, matrix, summary, actions } = req.body || {};
+
+  try {
+    await saveDocument(uid, 'prioritizer', docId, {
+      rawText: rawText || '',
+      matrix: matrix || {},
+      summary: summary || '',
+      actions: actions || [],
+      timestamp: new Date().toISOString()
+    });
+    return res.status(201).json({ success: true, id: docId });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/data/synthesize-journal
+ * Intelligent Journaling Engine: Synthesizes cross-tool trends, emotional patterns,
+ * friction triggers, and executive wins across past sessions.
+ */
+router.post('/synthesize-journal', async (req, res) => {
+  const uid = req.user.uid;
+  try {
+    const [journalEntries, sessions, prioritizerItems, socraticSessions] = await Promise.all([
+      listDocuments(uid, 'journal', 10),
+      listDocuments(uid, 'sessions', 15),
+      listDocuments(uid, 'prioritizer', 5),
+      listDocuments(uid, 'socratic_sessions', 10)
+    ]);
+
+    const contextSummary = [
+      `User Journal Entries (${journalEntries.length}): ` + journalEntries.slice(0, 3).map(e => e.entryText || e.rawContent || '').join(' | '),
+      `Recent Chat Turns (${sessions.length}): ` + sessions.slice(0, 5).map(s => `${s.userPrompt} -> ${s.aiResponse ? s.aiResponse.slice(0, 100) : ''}`).join(' | '),
+      `Recent 4D Triages (${prioritizerItems.length}): ` + prioritizerItems.map(p => p.rawText || '').join(' | '),
+      `Recent Socratic Reflections (${socraticSessions.length}): ` + socraticSessions.slice(0, 3).map(s => `${s.userReflection} -> ${s.aiResponse ? s.aiResponse.slice(0, 80) : ''}`).join(' | ')
+    ].join('\n\n');
+
+    const prompt = `You are RICHA's Intelligent Cognitive Journaling Synthesizer.
+Analyze the following cross-tool activity and reflections for a neurodivergent individual:
+
+${contextSummary.slice(0, 3000)}
+
+Generate an Intelligent Cognitive Synthesis formatted in clear markdown:
+1. ⚡ **Executive Energy & Pacing Patterns**: When do they struggle most, and what task combinations (e.g. household vs study) overload them?
+2. 🛑 **Friction Points & Avoidance Triggers**: What specific cognitive or sensory hurdles triggered resistance?
+3. 💡 **Personalized Micro-Accommodations**: Concrete, guilt-free tactics tailored to their real habits.
+4. 🌟 **Celebrated Wins & Progress**: Visible accomplishments, even small ones, that prove forward momentum.
+5. ❓ **Socratic Journal Prompt of the Day**: One insightful, compassion-first question for tonight's journal entry.`;
+
+    const aiResult = await generateContentWithFallback(prompt, 'You are RICHA Intelligent Journal Engine.');
+    const synthId = `synth_${Date.now()}`;
+
+    const synthDoc = {
+      id: synthId,
+      synthesis: aiResult.text,
+      timestamp: new Date().toISOString(),
+      entriesAnalyzed: journalEntries.length + sessions.length + prioritizerItems.length + socraticSessions.length
+    };
+
+    await saveDocument(uid, 'synthesized_journal', synthId, synthDoc);
+
+    return res.status(200).json({
+      success: true,
+      synthesis: aiResult.text,
+      entriesAnalyzed: synthDoc.entriesAnalyzed,
+      timestamp: synthDoc.timestamp
+    });
+  } catch (error) {
+    console.error('[SynthesizeJournal] Error:', error);
     return res.status(500).json({ error: error.message });
   }
 });

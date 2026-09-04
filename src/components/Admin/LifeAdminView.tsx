@@ -123,6 +123,26 @@ export function LifeAdminView() {
               <label className="block text-xs font-bold text-slate-800 mb-1">
                 Specific preferences or dietary/financial constraints
               </label>
+              
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {[
+                  'Quick 15-min limit',
+                  'Low executive energy',
+                  'Zero perfectionism',
+                  'Vegetarian & low prep',
+                  'Auditing unused subscriptions'
+                ].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setCustomDetails(preset)}
+                    className="text-[10px] font-extrabold bg-slate-100 hover:bg-indigo-100 text-slate-800 border border-slate-300 rounded-lg px-2 py-0.5 transition-all"
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+
               <textarea
                 rows={2}
                 value={customDetails}

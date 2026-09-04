@@ -179,3 +179,50 @@ export async function deleteDocument(authUid, collectionName, docId) {
   }
   return { success: true };
 }
+
+/**
+ * Purges all data stored for a user (used for session cleanup on logout, sandbox resets, or GDPR)
+ */
+export async function purgeUserData(authUid) {
+  if (!authUid) return { success: false, error: 'UID required' };
+
+  const firestore = getFirestoreInstance();
+  if (firestore) {
+    try {
+      const collections = [
+        'journal',
+        'tasks',
+        'kanban',
+        'habits',
+        'admin',
+        'dates',
+        'braindump',
+        'sessions',
+        'socratic_sessions',
+        'prioritizer',
+        'planner',
+        'profile',
+        'synthesized_journal'
+      ];
+      for (const coll of collections) {
+        const snap = await firestore.collection('users').doc(authUid).collection(coll).limit(200).get();
+        if (!snap.empty) {
+          const batch = firestore.batch();
+          snap.docs.forEach((doc) => batch.delete(doc.ref));
+          await batch.commit();
+        }
+      }
+    } catch (error) {
+      console.warn(`[FirestoreHelper] Cloud purge failed for ${authUid}: ${error.message}`);
+    }
+  }
+
+  // Clear in-memory persistent store for this user
+  for (const key of Array.from(localMemoryStore.keys())) {
+    if (key.startsWith(`users/${authUid}/`) || key === `users/${authUid}`) {
+      localMemoryStore.delete(key);
+    }
+  }
+
+  return { success: true };
+}

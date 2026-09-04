@@ -2,8 +2,13 @@
 // SECURITY: Directive 2 (OWASP A01), Directive 3 (User Isolation)
 // AGENT: Kanban Agent (Agent 6) Interactive Board
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import {
+  getUserStorageItem,
+  setUserStorageItem,
+  removeUserStorageItem
+} from '../../utils/userStorage';
 import {
   Plus,
   Clock,
@@ -57,7 +62,8 @@ const DOMAINS: { id: KanbanCard['domain']; label: string; badge: string }[] = [
 ];
 
 export function KanbanBoard() {
-  const { getIdToken } = useAuth();
+  const { user, getIdToken } = useAuth();
+  const uid = user?.uid;
   const [cards, setCards] = useState<KanbanCard[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedDomain, setSelectedDomain] = useState<string>('all');
@@ -66,7 +72,7 @@ export function KanbanBoard() {
   // Dimension 6 (Rigid Constraints): WIP Soft Gate & 2-Hour Capacity Override
   const [wipOverrideUntil, setWipOverrideUntil] = useState<number>(() => {
     try {
-      const saved = localStorage.getItem('richa_wip_override');
+      const saved = getUserStorageItem(uid, 'wip_override');
       return saved ? parseInt(saved, 10) : 0;
     } catch {
       return 0;
@@ -83,7 +89,7 @@ export function KanbanBoard() {
   const handleActivateOverride = () => {
     const twoHoursLater = Date.now() + 2 * 60 * 60 * 1000;
     setWipOverrideUntil(twoHoursLater);
-    localStorage.setItem('richa_wip_override', twoHoursLater.toString());
+    setUserStorageItem(uid, 'wip_override', twoHoursLater.toString());
     if (softGateModal) {
       executeMove(softGateModal.pendingCardId, softGateModal.destColumn);
       setSoftGateModal(null);
@@ -92,7 +98,7 @@ export function KanbanBoard() {
 
   const handleClearOverride = () => {
     setWipOverrideUntil(0);
-    localStorage.removeItem('richa_wip_override');
+    removeUserStorageItem(uid, 'wip_override');
   };
   const [newCard, setNewCard] = useState<{
     title: string;
@@ -110,7 +116,12 @@ export function KanbanBoard() {
     priority: 'medium'
   });
 
-  const fetchCards = async () => {
+  const fetchCards = useCallback(async () => {
+    if (!uid) {
+      setCards([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const token = await getIdToken();
@@ -122,17 +133,20 @@ export function KanbanBoard() {
       if (res.ok) {
         const data = await res.json();
         setCards(data.cards || []);
+      } else {
+        setCards([]);
       }
     } catch (e) {
       console.error('Failed to load kanban cards:', e);
+      setCards([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [uid, getIdToken]);
 
   useEffect(() => {
     fetchCards();
-  }, []);
+  }, [fetchCards]);
 
   const handleCreateCard = async (e: React.FormEvent) => {
     e.preventDefault();

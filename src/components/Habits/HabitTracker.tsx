@@ -24,16 +24,31 @@ const DEFAULT_HABITS: HabitItem[] = [
 
 export function HabitTracker() {
   const { data: remoteHabits, addDocument, removeDocument, loading: habitsLoading } = useFirestore<HabitItem>('habits');
-  const [habits, setHabits] = useState<HabitItem[]>(DEFAULT_HABITS);
+  const [habits, setHabits] = useState<HabitItem[]>([]);
   const [newHabitName, setNewHabitName] = useState('');
   const [newDomain, setNewDomain] = useState('self');
   const [newFreq, setNewFreq] = useState<'daily' | 'weekly'>('daily');
 
   useEffect(() => {
-    if (remoteHabits && remoteHabits.length > 0) {
-      setHabits(remoteHabits);
+    if (!habitsLoading) {
+      if (remoteHabits && remoteHabits.length > 0) {
+        setHabits(remoteHabits);
+      } else {
+        setHabits([]);
+      }
     }
-  }, [remoteHabits]);
+  }, [remoteHabits, habitsLoading]);
+
+  const handleLoadStarterHabits = async () => {
+    setHabits(DEFAULT_HABITS);
+    for (const h of DEFAULT_HABITS) {
+      try {
+        await addDocument(h);
+      } catch (err) {
+        console.warn('Failed to seed starter habit:', err);
+      }
+    }
+  };
 
   const toggleHabit = async (id: string) => {
     const updated = habits.map((h) => {
@@ -158,7 +173,24 @@ export function HabitTracker() {
       </form>
 
       {/* Habit List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {habits.length === 0 ? (
+        <div className="p-8 text-center bg-white rounded-2xl border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] space-y-3">
+          <Sparkles className="w-8 h-8 text-amber-500 mx-auto" />
+          <h4 className="text-sm font-extrabold text-slate-800">No habits tracked yet</h4>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
+            Start small with low-demand routines, or load gentle starter routines for executive function.
+          </p>
+          <button
+            type="button"
+            onClick={handleLoadStarterHabits}
+            className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-xs rounded-xl border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] inline-flex items-center gap-2 cursor-pointer transition-all"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            Load Starter Routines
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {habits.map((habit) => (
           <div
             key={habit.id}
@@ -211,6 +243,7 @@ export function HabitTracker() {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }

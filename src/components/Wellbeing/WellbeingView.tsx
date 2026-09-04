@@ -136,6 +136,37 @@ export function WellbeingView() {
               <label className="block text-xs font-bold text-slate-800 mb-1">
                 How does your nervous system feel right now?
               </label>
+
+              {/* Presets & Suggestions */}
+              <div className="mb-2">
+                <p className="text-[11px] font-bold text-slate-500 mb-1.5">Common sensory states (click to populate):</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    {
+                      label: '🎧 Sensory Overload',
+                      val: 'Too much background noise, visual clutter, buzzing feeling in head, and screens are burning my eyes'
+                    },
+                    {
+                      label: '🔋 Deep Energy Burnout',
+                      val: 'Completely drained, zero motivation, staring at the wall, executive function is at zero'
+                    },
+                    {
+                      label: '⚡ Masking & People Fatigue',
+                      val: 'Spent all day masking in social settings and meetings, drained from interpersonal demands, need quiet isolation'
+                    }
+                  ].map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => setSensoryState(preset.val)}
+                      className="text-[10px] font-extrabold bg-slate-100 hover:bg-rose-100 text-slate-800 border border-slate-300 rounded-lg px-2.5 py-1 transition-all"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <textarea
                 rows={4}
                 required
