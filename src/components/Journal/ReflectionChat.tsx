@@ -786,13 +786,13 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
       {/* Header */}
       <div className="px-6 py-3.5 border-b-2 border-slate-900 bg-slate-50 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 border-2 border-slate-900 flex items-center justify-center text-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+          <div className="w-9 h-9 rounded-xl bg-indigo-600 border-2 border-slate-900 flex items-center justify-center text-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] shrink-0">
             <Bot className="w-5 h-5" />
           </div>
           <div>
             <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
               <span>RICHA</span>
-              <span className="text-xs font-semibold text-slate-500">• Journaling Companion</span>
+              <span className="text-xs font-semibold text-slate-500">• The Conversational Hearth</span>
             </h2>
             <p className="text-xs text-slate-500">Talk like a human — your journal writes itself.</p>
           </div>

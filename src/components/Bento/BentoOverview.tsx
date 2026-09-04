@@ -85,6 +85,7 @@ const DEFAULT_DEMO_HABITS: HabitItem[] = [
 export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
   const { user, getIdToken } = useAuth();
   const { isDemoMode } = useDemoMode();
+  const [bentoDensity, setBentoDensity] = useState<'calm' | 'detailed'>('calm');
   const [quickThought, setQuickThought] = useState('');
   const [loading, setLoading] = useState(false);
   const [dataRefreshing, setDataRefreshing] = useState(false);
@@ -401,8 +402,48 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-5 auto-rows-auto">
+      {/* 0. Bento Density & Cognitive Horizon Selector */}
+      <div className="col-span-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white border-2 border-slate-900 rounded-2xl p-4 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)]">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 font-black text-sm">
+            🪐
+          </div>
+          <div>
+            <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">Your Orbit • Cognitive Overview</h2>
+            <p className="text-[11px] text-slate-500">
+              {bentoDensity === 'calm'
+                ? '🌿 Calm Mode: Filtered to 3 core anchors to eliminate sensory fatigue'
+                : '📊 Detailed Mode: Complete cross-agent dashboard panorama'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-300">
+          <button
+            onClick={() => setBentoDensity('calm')}
+            className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition-all ${
+              bentoDensity === 'calm'
+                ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            🌿 Calm Mode (3 Anchors)
+          </button>
+          <button
+            onClick={() => setBentoDensity('detailed')}
+            className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition-all ${
+              bentoDensity === 'detailed'
+                ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            📊 Detailed Grid
+          </button>
+        </div>
+      </div>
+
       {/* 1. Main Reflection & Live Journal Section (Span 6 on desktop, 12 on mobile) */}
-      <section className="md:col-span-6 lg:col-span-5 bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between min-h-[440px]">
+      <section className={`${bentoDensity === 'calm' ? 'md:col-span-6 lg:col-span-6' : 'md:col-span-6 lg:col-span-5'} bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between min-h-[440px]`}>
         <div>
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -488,8 +529,8 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
         </form>
       </section>
 
-      {/* 2. Executive Load & Active Plan (Span 3 on desktop) */}
-      <section className="md:col-span-6 lg:col-span-3 bg-indigo-600 border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] text-white flex flex-col justify-between">
+      {/* 2. Executive Load & Active Plan */}
+      <section className={`${bentoDensity === 'calm' ? 'md:col-span-6 lg:col-span-6' : 'md:col-span-6 lg:col-span-3'} bg-indigo-600 border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] text-white flex flex-col justify-between`}>
         <div>
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-extrabold opacity-90 uppercase tracking-widest">
@@ -557,8 +598,8 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
         </div>
       </section>
 
-      {/* 3. Wellbeing & Sensory Check (Span 4 on desktop) */}
-      <section className="md:col-span-12 lg:col-span-4 bg-[#E2F5E9] border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
+      {/* 3. Wellbeing & Sensory Check */}
+      <section className={`${bentoDensity === 'calm' ? 'md:col-span-12 lg:col-span-12' : 'md:col-span-12 lg:col-span-4'} bg-[#E2F5E9] border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between`}>
         <div>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -605,8 +646,11 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
         </div>
       </section>
 
-      {/* 4. Kanban Sprint Summary (Span 7 on desktop) */}
-      <section className="md:col-span-12 lg:col-span-7 bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
+      {/* Detailed Mode: Cards 4-7 */}
+      {bentoDensity === 'detailed' ? (
+        <>
+          {/* 4. Kanban Sprint Summary (Span 7 on desktop) */}
+          <section className="md:col-span-12 lg:col-span-7 bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
         <div>
           <div className="flex justify-between items-center mb-4">
             <div>
@@ -664,13 +708,13 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">
-              Micro-Habit Consistency
+              Daily Anchors & Footprint
             </h3>
             <button
               onClick={() => onNavigateTab('habits')}
               className="text-xs text-indigo-600 font-bold hover:underline cursor-pointer"
             >
-              All Streaks
+              All Anchors
             </button>
           </div>
 
@@ -694,8 +738,8 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-extrabold text-amber-600 mr-1">
-                      {habit.streak}d
+                    <span className="text-[10px] font-extrabold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200 mr-1">
+                      {habit.streak || 1} logged
                     </span>
                     <div className="flex gap-1">
                       {[1, 2, 3, 4].map((step) => (
@@ -727,9 +771,9 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
         </div>
 
         <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-          <span className="flex items-center gap-1 text-amber-600 font-bold">
-            <Flame className="w-3.5 h-3.5 fill-amber-500" />
-            {habitsList.reduce((acc, h) => Math.max(acc, h.streak || 0), 0)} day top momentum
+          <span className="flex items-center gap-1 text-teal-700 font-bold">
+            <HeartHandshake className="w-3.5 h-3.5 text-teal-600" />
+            <span>Cumulative Footprint: {habitsList.reduce((acc, h) => acc + (h.streak || 1), 0)} anchors celebrated</span>
           </span>
           <button
             onClick={() => onNavigateTab('admin')}
@@ -849,6 +893,26 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
           RICHA (Reflective Insight & Cognitive Helper Assistant) • ZERO-TRUST ARCHITECTURE
         </div>
       </footer>
+        </>
+      ) : (
+        <div className="col-span-12 bg-white/80 border-2 border-dashed border-slate-300 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-600">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl">🌿</span>
+            <div>
+              <p className="text-xs font-bold text-slate-800">Calm Horizon Active (Visual Overload Shield)</p>
+              <p className="text-[11px] text-slate-500">
+                Kanban flow board, daily habit anchors, and Socratic deep dive are safely tucked away to protect your focus.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setBentoDensity('detailed')}
+            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold rounded-xl border border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] transition-all cursor-pointer shrink-0"
+          >
+            Switch to Detailed Grid
+          </button>
+        </div>
+      )}
     </div>
   );
 }

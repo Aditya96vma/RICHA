@@ -15,6 +15,8 @@ import { LifeAdminView } from '../components/Admin/LifeAdminView';
 import { WellbeingView } from '../components/Wellbeing/WellbeingView';
 import { GlobalControls } from '../components/shared/GlobalControls';
 import { DemoShowcaseBanner } from '../components/shared/DemoShowcaseBanner';
+import { OverwhelmModal } from '../components/shared/OverwhelmModal';
+import { CognitiveSupportSelector } from '../components/shared/CognitiveSupportSelector';
 import {
   Brain,
   LayoutGrid,
@@ -34,7 +36,8 @@ import {
   Database,
   Check,
   Download,
-  Info
+  Info,
+  Moon
 } from 'lucide-react';
 
 export type DashboardTab =
@@ -67,8 +70,10 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<DashboardTab>('chat');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [handoffData, setHandoffData] = useState<AgentHandoffPayload | null>(null);
   const [showStorageModal, setShowStorageModal] = useState(false);
+  const [showOverwhelmModal, setShowOverwhelmModal] = useState(false);
 
   const handleUserLogout = async () => {
     await logout();
@@ -88,103 +93,191 @@ export function Dashboard({ onLogout }: DashboardProps) {
       });
     }
     setActiveTab(tab);
+    setActionMenuOpen(false);
   };
 
-  const TABS: { id: DashboardTab; label: string; icon: React.ElementType; badge?: string }[] = [
-    { id: 'overview', label: 'Bento Grid', icon: LayoutGrid, badge: 'Hub' },
-    { id: 'chat', label: 'Journal', icon: MessageSquare, badge: 'Agent 5' },
-    { id: 'planner', label: 'Planner', icon: Zap, badge: 'Agent 1' },
-    { id: 'prioritizer', label: '4D Review', icon: RefreshCw, badge: 'Agent 2' },
-    { id: 'kanban', label: 'Kanban', icon: Layers, badge: 'Agent 6' },
-    { id: 'braindump', label: 'Bullet Log', icon: BookOpen, badge: 'Agent 7' },
-    { id: 'habits', label: 'Habits', icon: Flame, badge: 'Agent 6' },
-    { id: 'admin', label: 'Life Admin', icon: Calendar, badge: 'Agent 3' },
-    { id: 'wellbeing', label: 'Wellbeing', icon: HeartHandshake, badge: 'Agent 4' }
+  const ACTION_TABS: { id: DashboardTab; label: string; icon: React.ElementType; desc: string }[] = [
+    { id: 'planner', label: 'Micro-Planner', icon: Zap, desc: 'Sub-20m atomic execution steps' },
+    { id: 'prioritizer', label: '4D Review', icon: RefreshCw, desc: 'Minimum Viable Versions (MVV)' },
+    { id: 'kanban', label: 'Kanban Flow', icon: Layers, desc: '3-card WIP limit container' },
+    { id: 'braindump', label: 'Bullet Log', icon: BookOpen, desc: 'Rapid logging & dump' }
   ];
 
+  const TABS: { id: DashboardTab; label: string; icon: React.ElementType; badge?: string }[] = [
+    { id: 'chat', label: 'Journal', icon: MessageSquare, badge: 'Hearth' },
+    { id: 'overview', label: 'Your Orbit', icon: LayoutGrid, badge: 'Bento' },
+    { id: 'habits', label: 'Habits', icon: Flame, badge: 'Anchors' },
+    { id: 'wellbeing', label: 'Wellbeing', icon: HeartHandshake, badge: 'Sensory' },
+    { id: 'admin', label: 'Life Admin', icon: Calendar, badge: 'Routines' }
+  ];
+
+  const isActionTabActive = ACTION_TABS.some((t) => t.id === activeTab);
+
   return (
-    <div className="min-h-screen bg-[#F1F5F9] flex flex-col font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
-      {/* Top Bento Header Navigation */}
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+      {/* Top Navigation Bar */}
       <nav className="sticky top-0 z-30 bg-white border-b-2 border-slate-900 flex-shrink-0 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
           {/* Brand Identity */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-600 border-2 border-slate-900 rounded-lg flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+          <div
+            className="flex items-center gap-2.5 cursor-pointer shrink-0"
+            onClick={() => setActiveTab('chat')}
+            title="Return to Journal"
+          >
+            <div className="w-8 h-8 bg-indigo-600 border-2 border-slate-900 rounded-lg flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] shrink-0">
               <span className="text-white font-black text-sm">R</span>
             </div>
-            <h1 className="text-lg sm:text-xl font-bold tracking-tight uppercase">
+            <h1 className="text-base sm:text-lg font-black tracking-tight uppercase leading-none whitespace-nowrap">
               RICHA <span className="text-indigo-600">Journal</span>
             </h1>
           </div>
 
-          {/* Bento Navigation Bar / Segmented Controls */}
-          <div className="hidden lg:flex items-center gap-1 bg-slate-100 p-1.5 rounded-xl border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
+          {/* Calm 3-Hub Segmented Navigation */}
+          <div className="hidden lg:flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+            {/* Primary Hearth (Conversational Journal) */}
+            <button
+              id="tab-chat"
+              onClick={() => setActiveTab('chat')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'chat'
+                  ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700 font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <MessageSquare className={`w-3.5 h-3.5 ${activeTab === 'chat' ? 'text-indigo-600' : 'text-slate-500'}`} />
+              <span>Journal</span>
+            </button>
 
-              return (
-                <button
-                  key={tab.id}
-                  id={`tab-${tab.id}`}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    isActive
-                      ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700 font-extrabold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-600' : 'text-slate-500'}`} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
+            {/* Action Space Dropdown Hub */}
+            <div className="relative">
+              <button
+                id="tab-actions-menu"
+                onClick={() => setActionMenuOpen(!actionMenuOpen)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  isActionTabActive
+                    ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700 font-extrabold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
+              >
+                <Zap className={`w-3.5 h-3.5 ${isActionTabActive ? 'text-indigo-600' : 'text-slate-500'}`} />
+                <span>Action Space</span>
+                <span className="text-[10px] text-slate-400">▾</span>
+              </button>
+
+              {actionMenuOpen && (
+                <div className="absolute left-0 mt-2 w-64 bg-white border-2 border-slate-900 rounded-2xl shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] z-50 p-2 space-y-1 animate-fadeIn">
+                  <div className="px-2.5 py-1 border-b border-slate-100">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                      Focus & Scaffold Tools
+                    </p>
+                  </div>
+                  {ACTION_TABS.map((tab) => {
+                    const TabIcon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => {
+                          setActiveTab(tab.id);
+                          setActionMenuOpen(false);
+                        }}
+                        className={`w-full text-left p-2 rounded-xl flex items-center gap-2.5 transition-all ${
+                          isActive ? 'bg-indigo-50/80 border border-indigo-300 font-extrabold' : 'hover:bg-slate-50'
+                        }`}
+                      >
+                        <TabIcon className="w-4 h-4 text-indigo-600 shrink-0" />
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">{tab.label}</div>
+                          <div className="text-[10px] text-slate-400 leading-tight">{tab.desc}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Orbit / Bento Dashboard */}
+            <button
+              id="tab-overview"
+              onClick={() => setActiveTab('overview')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'overview'
+                  ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700 font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <LayoutGrid className={`w-3.5 h-3.5 ${activeTab === 'overview' ? 'text-indigo-600' : 'text-slate-500'}`} />
+              <span>Your Orbit</span>
+            </button>
+
+            {/* Satellites */}
+            <button
+              id="tab-habits"
+              onClick={() => setActiveTab('habits')}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'habits'
+                  ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700 font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <Flame className="w-3.5 h-3.5 text-amber-500" />
+              <span>Habits</span>
+            </button>
+
+            <button
+              id="tab-wellbeing"
+              onClick={() => setActiveTab('wellbeing')}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'wellbeing'
+                  ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700 font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <HeartHandshake className="w-3.5 h-3.5 text-teal-600" />
+              <span>Wellbeing</span>
+            </button>
           </div>
 
-          {/* 2 Global Toggles & User Profile */}
-          <div className="flex items-center gap-2 sm:gap-3 border-l border-slate-200 pl-3 sm:pl-5">
-            {/* 2 Global Toggles: 1 for Dark/Light mode, 1 for Demo Mode */}
+          {/* Right Header: Overwhelm SOS, Global Controls, Cognitive Support Level */}
+          <div className="flex items-center gap-2 sm:gap-3 border-l border-slate-200 pl-3">
+            {/* The "I'm Overwhelmed" Single-Tap Safe Harbor */}
+            <button
+              id="dashboard-overwhelm-btn"
+              onClick={() => setShowOverwhelmModal(true)}
+              className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-800 font-extrabold text-xs rounded-lg border-2 border-rose-800 shadow-[2px_2px_0px_0px_rgba(159,18,57,1)] flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
+              title="Zero-demand calm harbor & somatic vagus reset"
+            >
+              <Moon className="w-3.5 h-3.5 text-rose-700" />
+              <span className="font-extrabold">I'm Overwhelmed</span>
+            </button>
+
+            {/* Global Toggles: Theme & Demo Mode */}
             <GlobalControls onNavigateTab={handleNavigateWithHandoff} />
 
-            {/* Sensory Shield Fast Action Trigger (Dimension 2) */}
-            <button
-              id="dashboard-shield-btn"
-              onClick={() => setActiveTab('wellbeing')}
-              className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-lg border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
-              title="Fast-path Sensory Shield & Overwhelm Protection"
-            >
-              <ShieldCheck className="w-4 h-4 text-white" />
-              <span className="hidden xl:inline">🛡️ Sensory Shield</span>
-            </button>
+            {/* Cognitive Support Level (Replaces Corporate Executive Mode) */}
+            <CognitiveSupportSelector />
 
             {/* Storage Architecture & Data Sovereignty Trigger */}
             <button
               id="dashboard-storage-btn"
               onClick={() => setShowStorageModal(true)}
-              className="hidden md:flex px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-lg border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] items-center gap-1.5 cursor-pointer transition-all shrink-0"
+              className="hidden md:flex px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg border border-slate-300 items-center gap-1 cursor-pointer transition-all shrink-0"
               title="How your data is stored, isolated, and protected"
             >
-              <Database className="w-4 h-4 text-indigo-600" />
-              <span className="hidden lg:inline">Storage</span>
+              <Database className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="hidden xl:inline">Storage</span>
             </button>
 
-            <div className="text-right hidden sm:block">
-              <p className="text-xs font-extrabold text-slate-900 tracking-tight">
-                {user?.displayName || user?.email || 'Alex Sterling'}
-              </p>
-              <p className="text-[10px] font-extrabold text-indigo-600 tracking-wider uppercase">
-                EXECUTIVE MODE
-              </p>
-            </div>
-
-            <div className="w-8 h-8 rounded-full bg-slate-200 border-2 border-slate-900 flex items-center justify-center font-bold text-xs text-slate-700 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
-              {user?.displayName?.charAt(0) || 'U'}
+            {/* User Avatar */}
+            <div className="w-8 h-8 rounded-full bg-slate-200 border-2 border-slate-900 flex items-center justify-center font-bold text-xs text-slate-700 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] shrink-0">
+              {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'A'}
             </div>
 
             <button
               id="dashboard-logout-btn"
               onClick={handleUserLogout}
-              className="p-1.5 text-slate-600 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors border border-transparent hover:border-slate-300"
+              className="p-1.5 text-slate-600 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors border border-transparent hover:border-slate-300 shrink-0"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -193,7 +286,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
             {/* Mobile menu trigger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-1.5 text-slate-900 border-2 border-slate-900 rounded-lg shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] bg-white"
+              className="lg:hidden p-1.5 text-slate-900 border-2 border-slate-900 rounded-lg shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] bg-white shrink-0"
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -202,15 +295,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
         {/* Mobile Navigation Dropdown */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t-2 border-slate-900 bg-white p-3 space-y-3">
-            {/* Global Toggles in Mobile Menu */}
+          <div className="lg:hidden border-t-2 border-slate-900 bg-white p-3 space-y-3 animate-fadeIn">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Toggles</span>
-              <GlobalControls onNavigateTab={handleNavigateWithHandoff} />
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Quick Pacing</span>
+              <CognitiveSupportSelector />
             </div>
 
             <div className="grid grid-cols-2 gap-1.5">
-              {TABS.map((tab) => {
+              {[...TABS, ...ACTION_TABS].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
 
@@ -362,6 +454,13 @@ export function Dashboard({ onLogout }: DashboardProps) {
           </div>
         </div>
       )}
+
+      {/* The "I'm Overwhelmed" Zero-Demand Calm Harbor */}
+      <OverwhelmModal
+        isOpen={showOverwhelmModal}
+        onClose={() => setShowOverwhelmModal(false)}
+        onNavigateTab={handleNavigateWithHandoff}
+      />
     </div>
   );
 }
