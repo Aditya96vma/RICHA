@@ -8,6 +8,7 @@ import chatRouter from './routes/chat.js';
 import kanbanRouter from './routes/kanban.js';
 import dataRouter from './routes/data.js';
 import socraticRouter from './routes/socratic.js';
+import decisionRouter from './routes/decision.js';
 import { getCandidateApiKeys } from './utils/geminiHelper.js';
 
 export function createServerApp() {
@@ -71,6 +72,7 @@ export function createServerApp() {
   app.use('/api/kanban', kanbanRouter);
   app.use('/api/data', dataRouter);
   app.use('/api/socratic', socraticRouter);
+  app.use('/api/decision', decisionRouter);
 
   // Global Error Handler
   app.use((err, req, res, next) => {

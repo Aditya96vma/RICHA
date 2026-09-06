@@ -341,7 +341,7 @@ ${turns.map((t) => `**${t.sender === 'user' ? 'My Reflection' : 'Socratic Coach'
                     <span className="text-[10px] text-slate-400 font-mono">{turn.timestamp}</span>
                   </div>
                   <div
-                    className="prose prose-xs max-w-none text-slate-800 font-medium"
+                    className="prose prose-xs max-w-none text-slate-800 dark:text-slate-100 font-medium"
                     dangerouslySetInnerHTML={{ __html: sanitizeHTML(turn.text) }}
                   />
                 </div>

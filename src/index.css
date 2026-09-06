@@ -1,158 +1,558 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@variant dark (&:is(.dark, .dark *));
 
-/* Dark mode root variable & baseline support */
+/* ==========================================================================
+   Universal Dark Mode Engine & Root Baseline
+   ========================================================================== */
 html.dark {
   color-scheme: dark;
 }
 
 html.dark body {
-  background-color: #0b0f19;
+  background-color: #090d16;
   color: #f1f5f9;
 }
 
-/* Invert brutalist panels cleanly in dark mode */
-.dark .bg-white {
-  background-color: #131b2e;
+/* Background resets for canvas in dark mode */
+.dark .bg-\[\#F1F5F9\],
+.dark .bg-\[\#F8FAFC\],
+.dark [class*="bg-[#F1F5F9]"],
+.dark [class*="bg-[#F8FAFC]"] {
+  background-color: #090d16 !important;
 }
 
-.dark .bg-\[\#F1F5F9\] {
-  background-color: #0b0f19;
+/* Universal Panel Surfaces in Dark Mode (matching solid and opacity variants) */
+.dark .bg-white,
+.dark [class*="bg-white/"] {
+  background-color: #111a2e !important;
 }
 
-.dark .bg-slate-50 {
-  background-color: #0f172a;
+.dark .bg-slate-50,
+.dark [class*="bg-slate-50/"] {
+  background-color: #0c1424 !important;
 }
 
-.dark .bg-slate-100 {
-  background-color: #1e293b;
+.dark .bg-slate-100,
+.dark [class*="bg-slate-100/"] {
+  background-color: #162238 !important;
 }
 
-.dark .bg-slate-200 {
-  background-color: #2e3d55;
+.dark .bg-slate-200,
+.dark [class*="bg-slate-200/"] {
+  background-color: #1f2f4c !important;
 }
 
-.dark .text-slate-900 {
-  color: #f8fafc;
+/* In dark mode, ensure active tab pills have distinct elevated contrast */
+.dark .bg-white.shadow-\[2px_2px_0px_0px_rgba\(15\,23\,42\,1\)\] {
+  background-color: #1c2a44 !important;
 }
 
-.dark .text-slate-800 {
-  color: #f1f5f9;
+/* ==========================================================================
+   Text & Heading Contrast Hierarchy
+   ========================================================================== */
+.dark .text-slate-900,
+.dark .text-slate-950,
+.dark [class*="text-slate-900"],
+.dark [class*="text-slate-950"],
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #f8fafc !important;
 }
 
-.dark .text-slate-700 {
-  color: #cbd5e1;
+.dark .text-slate-800,
+.dark [class*="text-slate-800"] {
+  color: #f1f5f9 !important;
 }
 
-.dark .text-slate-600 {
-  color: #94a3b8;
+.dark .text-slate-700,
+.dark [class*="text-slate-700"] {
+  color: #cbd5e1 !important;
 }
 
-.dark .text-slate-500 {
-  color: #94a3b8;
+.dark .text-slate-600,
+.dark [class*="text-slate-600"] {
+  color: #94a3b8 !important;
 }
 
-.dark .border-slate-900 {
+.dark .text-slate-500,
+.dark [class*="text-slate-500"] {
+  color: #94a3b8 !important;
+}
+
+.dark .text-slate-400,
+.dark [class*="text-slate-400"] {
+  color: #64748b !important;
+}
+
+/* ==========================================================================
+   STRICT PROTECTION: Buttons & Badges with Bright Colored Backgrounds
+   Ensure dark text on bright warning/accent colors is NEVER inverted to white
+   ========================================================================== */
+.dark .bg-amber-300,
+.dark .bg-amber-400,
+.dark .bg-amber-500,
+.dark .bg-yellow-300,
+.dark .bg-yellow-400,
+.dark .bg-yellow-500,
+.dark button.bg-amber-400,
+.dark button.bg-amber-500,
+.dark button.bg-yellow-400,
+.dark button.bg-amber-300,
+.dark [class*="bg-amber-400"],
+.dark [class*="bg-amber-300"],
+.dark [class*="bg-yellow-400"] {
+  color: #090d16 !important;
+}
+
+.dark .bg-amber-300 *,
+.dark .bg-amber-400 *,
+.dark .bg-amber-500 *,
+.dark .bg-yellow-300 *,
+.dark .bg-yellow-400 *,
+.dark .bg-yellow-500 *,
+.dark button.bg-amber-400 *,
+.dark button.bg-amber-500 *,
+.dark button.bg-yellow-400 *,
+.dark [class*="bg-amber-400"] *,
+.dark [class*="bg-amber-300"] * {
+  color: #090d16 !important;
+}
+
+/* Dark mode buttons with dark backgrounds */
+.dark .bg-slate-900,
+.dark .bg-slate-950 {
+  background-color: #0b111e;
   border-color: #38455d;
 }
 
-.dark .border-slate-200 {
-  border-color: #243046;
+/* ==========================================================================
+   Brutalist Borders & Shadows in Dark Mode
+   ========================================================================== */
+.dark .border-slate-900,
+.dark .border-black,
+.dark [class*="border-slate-900"] {
+  border-color: #38455d !important;
 }
 
-.dark .border-slate-300 {
-  border-color: #38455d;
+.dark .border-slate-200,
+.dark .border-slate-300,
+.dark [class*="border-slate-200"],
+.dark [class*="border-slate-300"] {
+  border-color: #27364f !important;
 }
 
-/* Card shadows in dark mode: crisp deep black shadow */
-.dark [class*="shadow-\[2px_2px_0px_0px_rgba(15,23,42,1)\]"] {
-  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 0.8) !important;
+.dark .border-slate-100,
+.dark [class*="border-slate-100"] {
+  border-color: #1a2538 !important;
 }
 
-.dark [class*="shadow-\[3px_3px_0px_0px_rgba(15,23,42,1)\]"] {
-  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 0.8) !important;
+/* Crisp deep black drop shadow replacing light mode dark-navy shadow */
+.dark [class*="shadow-[1px_1px_0px_0px_rgba(15,23,42,1)]"] {
+  box-shadow: 1px 1px 0px 0px rgba(0, 0, 0, 0.95) !important;
+}
+.dark [class*="shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"] {
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 0.95) !important;
+}
+.dark [class*="shadow-[3px_3px_0px_0px_rgba(15,23,42,1)]"] {
+  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 0.95) !important;
+}
+.dark [class*="shadow-[4px_4px_0px_0px_rgba(15,23,42,1)]"] {
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.95) !important;
+}
+.dark [class*="shadow-[5px_5px_0px_0px_rgba(15,23,42,1)]"] {
+  box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 0.95) !important;
+}
+.dark [class*="shadow-[6px_6px_0px_0px_rgba(15,23,42,1)]"] {
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 0.95) !important;
 }
 
-.dark [class*="shadow-\[4px_4px_0px_0px_rgba(15,23,42,1)\]"] {
-  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.8) !important;
-}
-
-.dark [class*="shadow-\[6px_6px_0px_0px_rgba(15,23,42,1)\]"] {
-  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 0.8) !important;
-}
-
-/* Inputs and textareas */
-.dark input:not([type="checkbox"]):not([type="radio"]),
+/* ==========================================================================
+   Interactive Forms & Inputs in Dark Mode
+   ========================================================================== */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
 .dark textarea,
 .dark select {
-  background-color: #0b111e;
-  color: #f8fafc;
-  border-color: #38455d;
+  background-color: #0b111e !important;
+  color: #f8fafc !important;
+  border-color: #38455d !important;
 }
 
 .dark input::placeholder,
 .dark textarea::placeholder {
-  color: #64748b;
+  color: #64748b !important;
 }
 
-/* Colorful container accents adapted for dark mode */
-.dark .bg-indigo-50 {
-  background-color: #1e1b4b;
-}
-.dark .text-indigo-900,
-.dark .text-indigo-950 {
-  color: #e0e7ff;
-}
-
-.dark .bg-emerald-50 {
-  background-color: #064e3b;
-}
-.dark .text-emerald-900,
-.dark .text-emerald-950 {
-  color: #a7f3d0;
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):focus,
+.dark textarea:focus,
+.dark select:focus,
+.dark [class*="focus:bg-white"]:focus {
+  background-color: #0e1626 !important;
+  color: #ffffff !important;
+  border-color: #6366f1 !important;
+  outline: none;
 }
 
-.dark .bg-amber-50 {
-  background-color: #451a03;
-}
-.dark .text-amber-900,
-.dark .text-amber-950 {
-  color: #fde68a;
+/* Checkboxes in dark mode */
+.dark input[type="checkbox"],
+.dark input[type="radio"] {
+  accent-color: #6366f1;
 }
 
-.dark .bg-rose-50 {
-  background-color: #4c0519;
+/* Hover state overrides for interactive elements */
+.dark .hover\:bg-slate-50:hover,
+.dark [class*="hover:bg-slate-50"]:hover {
+  background-color: #172236 !important;
 }
+
+.dark .hover\:bg-slate-100:hover,
+.dark [class*="hover:bg-slate-100"]:hover {
+  background-color: #1e2c44 !important;
+}
+
+.dark .hover\:bg-slate-200:hover,
+.dark [class*="hover:bg-slate-200"]:hover {
+  background-color: #283a59 !important;
+}
+
+/* ==========================================================================
+   Semantic Category Palettes (Triage & Statuses) in Dark Mode
+   ========================================================================== */
+
+/* 1. Rose / Delete / Urgency */
+.dark .bg-rose-50,
+.dark [class*="bg-rose-50"] {
+  background-color: #241018 !important;
+}
+.dark .bg-rose-100,
+.dark [class*="bg-rose-100"] {
+  background-color: #381220 !important;
+}
+.dark .border-rose-200,
+.dark .border-rose-300,
+.dark [class*="border-rose-200"],
+.dark [class*="border-rose-300"] {
+  border-color: #591b2c !important;
+}
+.dark .text-rose-950,
 .dark .text-rose-900,
-.dark .text-rose-950 {
-  color: #fecdd3;
+.dark [class*="text-rose-950"],
+.dark [class*="text-rose-900"] {
+  color: #ffe4e6 !important;
+}
+.dark .text-rose-800,
+.dark .text-rose-700,
+.dark [class*="text-rose-800"],
+.dark [class*="text-rose-700"] {
+  color: #fecdd3 !important;
+}
+.dark .text-rose-600,
+.dark [class*="text-rose-600"] {
+  color: #fb7185 !important;
 }
 
-.dark .bg-sky-50 {
-  background-color: #082f49;
+/* 2. Amber / Delay / Warning */
+.dark .bg-amber-50,
+.dark [class*="bg-amber-50"] {
+  background-color: #23160a !important;
 }
-.dark .text-sky-900,
-.dark .text-sky-950 {
-  color: #bae6fd;
+.dark .bg-amber-100,
+.dark [class*="bg-amber-100"] {
+  background-color: #38200d !important;
+}
+.dark .border-amber-200,
+.dark .border-amber-300,
+.dark [class*="border-amber-200"],
+.dark [class*="border-amber-300"] {
+  border-color: #593613 !important;
+}
+.dark .text-amber-950,
+.dark .text-amber-900,
+.dark [class*="text-amber-950"],
+.dark [class*="text-amber-900"] {
+  color: #fef3c7 !important;
+}
+.dark .text-amber-800,
+.dark .text-amber-700,
+.dark [class*="text-amber-800"],
+.dark [class*="text-amber-700"] {
+  color: #fde68a !important;
+}
+.dark .text-amber-600,
+.dark [class*="text-amber-600"] {
+  color: #fbbf24 !important;
 }
 
-.dark .bg-purple-50 {
-  background-color: #3b0764;
+/* 3. Indigo / Diminish / Focus */
+.dark .bg-indigo-50,
+.dark [class*="bg-indigo-50"] {
+  background-color: #121730 !important;
 }
+.dark .bg-indigo-100,
+.dark [class*="bg-indigo-100"] {
+  background-color: #1b2347 !important;
+}
+.dark .border-indigo-200,
+.dark .border-indigo-300,
+.dark [class*="border-indigo-200"],
+.dark [class*="border-indigo-300"] {
+  border-color: #2d3b6e !important;
+}
+.dark .text-indigo-950,
+.dark .text-indigo-900,
+.dark [class*="text-indigo-950"],
+.dark [class*="text-indigo-900"] {
+  color: #e0e7ff !important;
+}
+.dark .text-indigo-800,
+.dark .text-indigo-700,
+.dark [class*="text-indigo-800"],
+.dark [class*="text-indigo-700"] {
+  color: #c7d2fe !important;
+}
+.dark .text-indigo-600,
+.dark [class*="text-indigo-600"] {
+  color: #818cf8 !important;
+}
+
+/* 4. Emerald / Delegate / Done / Regulated */
+.dark .bg-emerald-50,
+.dark [class*="bg-emerald-50"],
+.dark .bg-\[\#E2F5E9\],
+.dark [class*="bg-[#E2F5E9]"] {
+  background-color: #0c2018 !important;
+}
+.dark .bg-emerald-100,
+.dark .bg-emerald-200,
+.dark [class*="bg-emerald-100"],
+.dark [class*="bg-emerald-200"] {
+  background-color: #133326 !important;
+}
+.dark .border-emerald-200,
+.dark .border-emerald-300,
+.dark [class*="border-emerald-200"],
+.dark [class*="border-emerald-300"] {
+  border-color: #194d3a !important;
+}
+.dark .text-emerald-950,
+.dark .text-emerald-900,
+.dark [class*="text-emerald-950"],
+.dark [class*="text-emerald-900"] {
+  color: #d1fae5 !important;
+}
+.dark .text-emerald-800,
+.dark .text-emerald-700,
+.dark [class*="text-emerald-800"],
+.dark [class*="text-emerald-700"] {
+  color: #a7f3d0 !important;
+}
+.dark .text-emerald-600,
+.dark [class*="text-emerald-600"] {
+  color: #34d399 !important;
+}
+
+/* 5. Purple / Routine / Waiting */
+.dark .bg-purple-50,
+.dark [class*="bg-purple-50"] {
+  background-color: #1d102e !important;
+}
+.dark .bg-purple-100,
+.dark [class*="bg-purple-100"] {
+  background-color: #2b1642 !important;
+}
+.dark .border-purple-200,
+.dark .border-purple-300,
+.dark [class*="border-purple-200"],
+.dark [class*="border-purple-300"] {
+  border-color: #4b236e !important;
+}
+.dark .text-purple-950,
 .dark .text-purple-900,
-.dark .text-purple-950 {
-  color: #e9d5ff;
+.dark [class*="text-purple-950"],
+.dark [class*="text-purple-900"] {
+  color: #f3e8ff !important;
+}
+.dark .text-purple-800,
+.dark .text-purple-700,
+.dark [class*="text-purple-800"],
+.dark [class*="text-purple-700"] {
+  color: #e9d5ff !important;
+}
+.dark .text-purple-600,
+.dark [class*="text-purple-600"] {
+  color: #c084fc !important;
 }
 
-.dark .bg-\[\#E2F5E9\] {
-  background-color: #064e3b;
+/* 6. Blue / Sky / Work / Info */
+.dark .bg-blue-50,
+.dark [class*="bg-blue-50"],
+.dark .bg-sky-50,
+.dark [class*="bg-sky-50"],
+.dark .bg-\[\#EBF0FE\],
+.dark [class*="bg-[#EBF0FE]"] {
+  background-color: #0d192e !important;
+}
+.dark .bg-blue-100,
+.dark [class*="bg-blue-100"],
+.dark .bg-sky-100,
+.dark [class*="bg-sky-100"] {
+  background-color: #142644 !important;
+}
+.dark .border-blue-200,
+.dark .border-blue-300,
+.dark .border-sky-200,
+.dark .border-sky-300,
+.dark [class*="border-blue-200"],
+.dark [class*="border-sky-200"] {
+  border-color: #1e3b63 !important;
+}
+.dark .text-blue-950,
+.dark .text-blue-900,
+.dark .text-sky-950,
+.dark .text-sky-900,
+.dark [class*="text-blue-950"],
+.dark [class*="text-sky-950"] {
+  color: #e0f2fe !important;
+}
+.dark .text-blue-800,
+.dark .text-blue-700,
+.dark .text-sky-800,
+.dark .text-sky-700,
+.dark [class*="text-blue-800"],
+.dark [class*="text-sky-800"] {
+  color: #bae6fd !important;
+}
+.dark .text-blue-600,
+.dark .text-sky-600,
+.dark [class*="text-blue-600"],
+.dark [class*="text-sky-600"] {
+  color: #60a5fa !important;
 }
 
-.dark .bg-\[\#EBF0FE\] {
-  background-color: #1e1b4b;
+/* 7. Teal / Somatic / Calm */
+.dark .bg-teal-50,
+.dark [class*="bg-teal-50"] {
+  background-color: #0b1f1f !important;
+}
+.dark .bg-teal-100,
+.dark [class*="bg-teal-100"] {
+  background-color: #123333 !important;
+}
+.dark .border-teal-200,
+.dark .border-teal-300,
+.dark [class*="border-teal-200"],
+.dark [class*="border-teal-300"] {
+  border-color: #174f4f !important;
+}
+.dark .text-teal-950,
+.dark .text-teal-900,
+.dark [class*="text-teal-950"],
+.dark [class*="text-teal-900"] {
+  color: #ccfbf1 !important;
+}
+.dark .text-teal-800,
+.dark .text-teal-700,
+.dark [class*="text-teal-800"],
+.dark [class*="text-teal-700"] {
+  color: #99f6e4 !important;
+}
+.dark .text-teal-600,
+.dark [class*="text-teal-600"] {
+  color: #2dd4bf !important;
 }
 
-.dark .bg-\[\#FEF6E9\] {
-  background-color: #451a03;
+/* 8. Pink / Contacts */
+.dark .bg-pink-50,
+.dark [class*="bg-pink-50"] {
+  background-color: #27101e !important;
+}
+.dark .bg-pink-100,
+.dark [class*="bg-pink-100"] {
+  background-color: #3b142d !important;
+}
+.dark .border-pink-200,
+.dark .border-pink-300,
+.dark [class*="border-pink-200"],
+.dark [class*="border-pink-300"] {
+  border-color: #5e1c47 !important;
+}
+.dark .text-pink-950,
+.dark .text-pink-900,
+.dark [class*="text-pink-950"],
+.dark [class*="text-pink-900"] {
+  color: #fce7f3 !important;
+}
+.dark .text-pink-800,
+.dark .text-pink-700,
+.dark [class*="text-pink-800"],
+.dark [class*="text-pink-700"] {
+  color: #fbcfe8 !important;
+}
+.dark .text-pink-600,
+.dark [class*="text-pink-600"] {
+  color: #f472b6 !important;
+}
+
+/* ==========================================================================
+   Prose & Markdown Formatting in Dark Mode
+   ========================================================================== */
+.dark .prose,
+.dark [class*="prose"] {
+  color: #f1f5f9;
+}
+
+.dark .prose p,
+.dark [class*="prose"] p,
+.dark .prose span,
+.dark [class*="prose"] span,
+.dark .prose div,
+.dark [class*="prose"] div {
+  color: #f1f5f9;
+}
+
+.dark .prose h1,
+.dark .prose h2,
+.dark .prose h3,
+.dark .prose h4,
+.dark [class*="prose"] h1,
+.dark [class*="prose"] h2,
+.dark [class*="prose"] h3,
+.dark [class*="prose"] h4 {
+  color: #ffffff !important;
+}
+
+.dark .prose strong,
+.dark [class*="prose"] strong {
+  color: #ffffff !important;
+}
+
+.dark .prose em,
+.dark [class*="prose"] em {
+  color: #e2e8f0 !important;
+}
+
+.dark .prose li,
+.dark [class*="prose"] li {
+  color: #cbd5e1 !important;
+}
+
+.dark .prose code,
+.dark [class*="prose"] code {
+  background-color: #1a2538 !important;
+  color: #c7d2fe !important;
+  border-color: #38455d !important;
+}
+
+.dark .prose hr,
+.dark [class*="prose"] hr {
+  border-color: #38455d !important;
+}
+
+.dark .prose a,
+.dark [class*="prose"] a {
+  color: #818cf8 !important;
 }

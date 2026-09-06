@@ -256,14 +256,77 @@ export function parsePlannerSteps(text, originalPrompt = '') {
  * @returns {Promise<{ agent: string, responseText: string, metadata: object }>}
  */
 export async function plannerAgent(userContent, uid, history = [], provider = 'gemini') {
-  let aiResult;
-  if (provider === 'ollama') {
-    aiResult = await generateContentWithOllama(userContent, PLANNER_SYSTEM_PROMPT);
-  } else {
-    aiResult = await generateContentWithFallback(userContent, PLANNER_SYSTEM_PROMPT);
+  // Strip slash commands and delimiters from input
+  let cleanInput = (userContent || '')
+    .replace(/\[USER_JOURNAL_DATA_START\]|\[USER_JOURNAL_DATA_END\]/gi, '')
+    .replace(/^\/(?:plan|schedule|day)\s*/i, '')
+    .trim();
+
+  // If user provided no tasks directly, inspect recent history
+  let historicalTasks = '';
+  if (!cleanInput && Array.isArray(history) && history.length > 0) {
+    const relevantTurns = history
+      .filter(m => (m.sender === 'user' || m.role === 'user') && m.text && !m.text.startsWith('/'))
+      .slice(-3)
+      .map(m => m.text.trim())
+      .filter(Boolean);
+
+    if (relevantTurns.length > 0) {
+      historicalTasks = relevantTurns.join('\n');
+    }
   }
 
-  const responseText = aiResult.text;
+  if (!cleanInput && !historicalTasks) {
+    const welcomeText = `### 📋 Executive Function Day Planner
+
+I'm here to help you break down your day into low-friction, realistic steps!
+
+**What would you like to plan today?**
+Share a specific task, project, or your rough agenda for the day (e.g., *"clean kitchen, finish history paper, and walk dog"* or *"prepare for afternoon client presentation"*).
+
+I will turn it into:
+* 🟢 **Phase 1: Low-Friction Entry** (Starting cues to bypass executive paralysis)
+* 🟡 **Phase 2: Focused Execution** (Realistic chunked sprints)
+* 🔵 **Phase 3: Wrap-up & Transition** (Sensory cooldown)
+
+*Just reply with what you need to get done, or let me know what energy level you have today!*
+
+---
+✅ Done this session: Day Planner ready for your task
+🔜 Suggested next step: Type or paste the task or schedule you want to plan
+💾 Saved to: Planner & Task Manager`;
+
+    const taskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    return {
+      agent: 'Planner Agent',
+      responseText: welcomeText,
+      metadata: {
+        taskId,
+        modelUsed: 'richa-planner-welcome',
+        module: 'tasks',
+        steps: [],
+        suggestedNextStep: 'Type or paste the task or schedule you want to plan'
+      }
+    };
+  }
+
+  const tasksToPlan = cleanInput || `Tasks discussed in recent conversation:\n${historicalTasks}`;
+  const promptToSend = `TASK TO PLAN:\n${tasksToPlan}`;
+
+  let aiResult;
+  if (provider === 'ollama') {
+    aiResult = await generateContentWithOllama(promptToSend, PLANNER_SYSTEM_PROMPT);
+  } else {
+    aiResult = await generateContentWithFallback(promptToSend, PLANNER_SYSTEM_PROMPT);
+  }
+
+  let responseText = (aiResult.text || '')
+    .replace(/\[USER_JOURNAL_DATA_START\]/gi, '')
+    .replace(/\[USER_JOURNAL_DATA_END\]/gi, '')
+    .replace(/between (?:the )?\[USER_JOURNAL_DATA_START\] and \[USER_JOURNAL_DATA_END\] tags?\.?/gi, 'here.')
+    .replace(/between the tags\.?/gi, 'here.')
+    .trim();
+
   const taskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
   // Extract structured steps and single next step for high-interactivity clients

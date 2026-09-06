@@ -3,6 +3,7 @@
 // AGENT: Orchestration Layer / Intent Classifier
 
 import { validatePromptSafety } from '../utils/geminiHelper.js';
+import { isGibberishOrKeysmash } from '../utils/gibberishDetector.js';
 
 /**
  * Fast-path acute distress tokens (zero-tolerance, minimal false negatives)
@@ -147,9 +148,35 @@ export function classifyIntent(userText, contextHint = '') {
     if (cmd === '/reflect' || cmd === '/vent') {
       return { intent: 'emotional_reflection', confidence: 1.0, burnoutDetected: false, perfectionismDetected: false, cleanCommandText };
     }
+    if (cmd === '/decide' || cmd === '/matrix' || cmd === '/choice' || cmd === '/decision') {
+      return { intent: 'decision_matrix', confidence: 1.0, burnoutDetected: false, perfectionismDetected: false, cleanCommandText };
+    }
     if (cmd === '/write' || cmd === '/diary' || cmd === '/journal') {
       return { intent: 'journal_entry', confidence: 1.0, burnoutDetected: false, perfectionismDetected: false, cleanCommandText };
     }
+  }
+
+  // 2b. Friendly Greetings (e.g. 'hello', 'hey richa', 'hi')
+  if (/^(hey|hi|hello|good morning|good afternoon|good evening|hey richa|hi richa|yo|greetings)[\s!.]*$/i.test(trimmed)) {
+    return {
+      intent: 'journal_entry',
+      confidence: 0.95,
+      burnoutDetected: false,
+      perfectionismDetected: false,
+      lowConfidence: false
+    };
+  }
+
+  // 2c. Keysmash / Gibberish (e.g. 'ddyjdjydjy', 'asdfghjkl', 'ughhhhh')
+  if (isGibberishOrKeysmash(trimmed)) {
+    return {
+      intent: 'journal_entry',
+      confidence: 0.95,
+      burnoutDetected: false,
+      perfectionismDetected: false,
+      isKeysmash: true,
+      lowConfidence: false
+    };
   }
 
   // 3. SENSORY SHIELD FAST-PATH TRIGGER (Priority 4 - Minimizing False Negatives)
@@ -217,19 +244,41 @@ export function classifyIntent(userText, contextHint = '') {
     };
   }
 
+  // Explicit UI Context Hints
+  if (contextHint === 'review_request' || contextHint === 'prioritizer') {
+    return { intent: 'review_request', confidence: 0.98, burnoutDetected: false, perfectionismDetected };
+  }
+  if (contextHint === 'planning_request' || contextHint === 'planner') {
+    return { intent: 'planning_request', confidence: 0.98, burnoutDetected: false, perfectionismDetected };
+  }
+  if (contextHint === 'admin_setup' || contextHint === 'admin') {
+    return { intent: 'admin_setup', confidence: 0.98, burnoutDetected: false, perfectionismDetected };
+  }
+  if (contextHint === 'burnout_signal' || contextHint === 'sensory_shield') {
+    return { intent: 'burnout_signal', confidence: 0.98, burnoutDetected: true, isFastPathSensory: true, perfectionismDetected: false };
+  }
+
   // 6. Morgenstern 4D Prioritizer Review
   if (
     lowerTextClean.includes('4d') ||
     lowerTextClean.includes('prioritize') ||
     lowerTextClean.includes('prioritise') ||
+    lowerTextClean.includes('priotise') ||
+    lowerTextClean.includes('priortize') ||
+    lowerTextClean.includes('triage') ||
     lowerTextClean.includes('review my to-do') ||
+    lowerTextClean.includes('review my todo') ||
     lowerTextClean.includes('review my task') ||
     lowerTextClean.includes('too many tasks') ||
     lowerTextClean.includes('deal with them without spending all day') ||
     lowerTextClean.includes('delete delay diminish delegate') ||
-    lowerTextClean.includes('which task should i do')
+    lowerTextClean.includes('which task should i do') ||
+    lowerTextClean.includes('tasks to triage') ||
+    lowerTextClean.startsWith('4d:') ||
+    lowerTextClean.startsWith('prioritize:') ||
+    lowerTextClean.startsWith('triage:')
   ) {
-    return { intent: 'review_request', confidence: 0.90, burnoutDetected: false, perfectionismDetected };
+    return { intent: 'review_request', confidence: 0.92, burnoutDetected: false, perfectionismDetected };
   }
 
   // 7. Bullet Journal & Daily Log
@@ -270,6 +319,35 @@ export function classifyIntent(userText, contextHint = '') {
     lowerTextClean.includes('admin routine')
   ) {
     return { intent: 'admin_setup', confidence: 0.88, burnoutDetected: false, perfectionismDetected };
+  }
+
+  // 9b. Decision Matrix & Psychological Dilemma Advisor
+  if (
+    contextHint === 'decision' ||
+    lowerTextClean.startsWith('decide:') ||
+    lowerTextClean.startsWith('decision:') ||
+    lowerTextClean.startsWith('matrix:') ||
+    lowerTextClean.includes('decision matrix') ||
+    lowerTextClean.includes("can't decide") ||
+    lowerTextClean.includes("cant decide") ||
+    lowerTextClean.includes("trouble deciding") ||
+    lowerTextClean.includes("problem deciding") ||
+    lowerTextClean.includes("having problem deciding") ||
+    lowerTextClean.includes("having a problem deciding") ||
+    lowerTextClean.includes("hard to decide") ||
+    lowerTextClean.includes("stuck between") ||
+    lowerTextClean.includes("torn between") ||
+    lowerTextClean.includes("help me decide") ||
+    lowerTextClean.includes("weighing options") ||
+    lowerTextClean.includes("pros and cons") ||
+    lowerTextClean.includes("which one should i choose") ||
+    lowerTextClean.includes("which should i choose") ||
+    lowerTextClean.includes("should i do a or b") ||
+    lowerTextClean.includes("analysis paralysis") ||
+    lowerTextClean.includes("indecisive") ||
+    lowerTextClean.includes("dilemma")
+  ) {
+    return { intent: 'decision_matrix', confidence: 0.92, burnoutDetected: false, perfectionismDetected };
   }
 
   // 10. Dates & Anniversaries

@@ -19,7 +19,8 @@ import {
   Info,
   X,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  Scale
 } from 'lucide-react';
 
 interface DemoShowcaseBannerProps {
@@ -47,16 +48,18 @@ export function DemoShowcaseBanner({
   else if (activeTab === 'habits') currentMeta = showcaseData.habits as any;
   else if (activeTab === 'admin') currentMeta = showcaseData.admin as any;
   else if (activeTab === 'wellbeing') currentMeta = showcaseData.wellbeing as any;
+  else if (activeTab === 'decision') currentMeta = (showcaseData as any).decision;
 
   const SHOWCASE_TABS: { id: DashboardTab; label: string; icon: React.ElementType }[] = [
     { id: 'overview', label: 'Bento Hub', icon: LayoutGrid },
     { id: 'planner', label: '1. Planner', icon: Zap },
     { id: 'prioritizer', label: '2. 4D Triage', icon: RefreshCw },
-    { id: 'admin', label: '3. Life Admin', icon: Calendar },
-    { id: 'wellbeing', label: '4. Wellbeing', icon: HeartHandshake },
-    { id: 'chat', label: '5. Socratic Journal', icon: MessageSquare },
-    { id: 'kanban', label: '6. Kanban', icon: Layers },
-    { id: 'braindump', label: '7. Bullet Log', icon: BookOpen },
+    { id: 'decision', label: '3. Decision Matrix', icon: Scale },
+    { id: 'admin', label: '4. Life Admin', icon: Calendar },
+    { id: 'wellbeing', label: '5. Wellbeing', icon: HeartHandshake },
+    { id: 'chat', label: '6. Socratic Journal', icon: MessageSquare },
+    { id: 'kanban', label: '7. Kanban', icon: Layers },
+    { id: 'braindump', label: '8. Bullet Log', icon: BookOpen },
     { id: 'habits', label: 'Habits', icon: Flame }
   ];
 

@@ -45,8 +45,16 @@ export async function generateContentWithOllama(userPrompt, systemInstruction) {
     }
 
     const data = await response.json();
+    let rawText = data.response || '';
+    rawText = rawText
+      .replace(/\[USER_JOURNAL_DATA_START\]/gi, '')
+      .replace(/\[USER_JOURNAL_DATA_END\]/gi, '')
+      .replace(/between (?:the )?\[USER_JOURNAL_DATA_START\] and \[USER_JOURNAL_DATA_END\] tags?\.?/gi, 'here.')
+      .replace(/between the tags\.?/gi, 'here.')
+      .trim();
+
     return {
-      text: data.response || '',
+      text: rawText,
       modelUsed: `ollama-${modelName}`
     };
   } catch (error) {

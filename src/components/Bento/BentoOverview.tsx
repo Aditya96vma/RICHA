@@ -33,7 +33,8 @@ import {
   RefreshCw,
   BrainCircuit,
   HelpCircle,
-  Play
+  Play,
+  Scale
 } from 'lucide-react';
 import { DashboardTab } from '../../pages/Dashboard';
 
@@ -403,14 +404,14 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-5 auto-rows-auto">
       {/* 0. Bento Density & Cognitive Horizon Selector */}
-      <div className="col-span-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white border-2 border-slate-900 rounded-2xl p-4 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)]">
+      <div className="col-span-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-[#111a2e] border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-4 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)]">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 font-black text-sm">
+          <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-black text-sm">
             🪐
           </div>
           <div>
-            <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">Your Orbit • Cognitive Overview</h2>
-            <p className="text-[11px] text-slate-500">
+            <h2 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">Your Orbit • Cognitive Overview</h2>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
               {bentoDensity === 'calm'
                 ? '🌿 Calm Mode: Filtered to 3 core anchors to eliminate sensory fatigue'
                 : '📊 Detailed Mode: Complete cross-agent dashboard panorama'}
@@ -418,23 +419,23 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-300">
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-300 dark:border-slate-700">
           <button
             onClick={() => setBentoDensity('calm')}
-            className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition-all ${
+            className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
               bentoDensity === 'calm'
-                ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-indigo-600 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 dark:border-indigo-500 text-indigo-700 dark:text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             🌿 Calm Mode (3 Anchors)
           </button>
           <button
             onClick={() => setBentoDensity('detailed')}
-            className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition-all ${
+            className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
               bentoDensity === 'detailed'
-                ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-indigo-600 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 dark:border-indigo-500 text-indigo-700 dark:text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             📊 Detailed Grid
@@ -443,14 +444,14 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
       </div>
 
       {/* 1. Main Reflection & Live Journal Section (Span 6 on desktop, 12 on mobile) */}
-      <section className={`${bentoDensity === 'calm' ? 'md:col-span-6 lg:col-span-6' : 'md:col-span-6 lg:col-span-5'} bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between min-h-[440px]`}>
+      <section className={`${bentoDensity === 'calm' ? 'md:col-span-6 lg:col-span-6' : 'md:col-span-6 lg:col-span-5'} bg-white dark:bg-[#111a2e] border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between min-h-[440px]`}>
         <div>
           <div className="flex justify-between items-start mb-4">
             <div>
-              <span className="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              <span className="bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                 Live Journal & Brain Dump
               </span>
-              <h2 className="text-xl font-bold text-slate-900 mt-1.5 tracking-tight">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-1.5 tracking-tight">
                 {latestEntry ? latestEntry.title : 'Recent Reflection Stream'}
               </h2>
             </div>
@@ -458,13 +459,13 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
               <button
                 onClick={loadDashboardData}
                 title="Refresh dashboard from journal"
-                className="p-1 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-slate-100 cursor-pointer"
+                className="p-1 rounded-md text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${dataRefreshing ? 'animate-spin' : ''}`} />
               </button>
               <button
                 onClick={() => onNavigateTab('chat')}
-                className="text-xs text-indigo-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <span>Full Journal</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -473,19 +474,19 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
           </div>
 
           {/* Real user entry or chat reflection stream */}
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 font-serif italic text-slate-700 text-sm leading-relaxed mb-4 max-h-48 overflow-y-auto">
+          <div className="bg-slate-50 dark:bg-[#0c1424] rounded-xl border border-slate-200 dark:border-slate-700/80 p-4 font-serif italic text-slate-800 dark:text-slate-100 text-sm leading-relaxed mb-4 max-h-48 overflow-y-auto">
             {recentChatSnippet?.userText ? (
               <p>"{recentChatSnippet.userText}"</p>
             ) : latestEntry?.content ? (
               <p>"{latestEntry.content.slice(0, 240)}{latestEntry.content.length > 240 ? '...' : ''}"</p>
             ) : (
-              <p className="text-slate-500 not-italic font-sans text-xs">
+              <p className="text-slate-500 dark:text-slate-400 not-italic font-sans text-xs">
                 No entries logged yet. Type a quick thought below or click <strong>Full Journal</strong> to start reflecting with RICHA.
               </p>
             )}
 
             {latestEntry?.location && (
-              <div className="mt-2 flex items-center gap-1 text-[11px] font-sans font-medium text-slate-500 not-italic">
+              <div className="mt-2 flex items-center gap-1 text-[11px] font-sans font-medium text-slate-500 dark:text-slate-400 not-italic">
                 <MapPin className="w-3 h-3 text-rose-500" />
                 <span>{latestEntry.location.placeName}</span>
               </div>
@@ -494,11 +495,11 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
 
           {/* AI Companion / Assistant live response */}
           {(recentChatSnippet?.aiReply || agentResponse) && (
-            <div className="bg-indigo-50/90 border border-indigo-200 rounded-xl p-3.5 flex items-start gap-2.5 mb-4">
+            <div className="bg-indigo-50 dark:bg-[#141b36] border border-indigo-200 dark:border-indigo-800/90 rounded-xl p-3.5 flex items-start gap-2.5 mb-4">
               <div className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 text-[10px] font-bold mt-0.5">
                 R
               </div>
-              <div className="text-xs text-indigo-950 leading-relaxed font-sans max-h-36 overflow-y-auto">
+              <div className="text-xs text-indigo-950 dark:text-indigo-100 leading-relaxed font-sans max-h-36 overflow-y-auto prose prose-xs dark:prose-invert [&_*]:dark:text-indigo-100 [&_strong]:dark:text-white [&_p]:dark:text-indigo-100">
                 <div
                   dangerouslySetInnerHTML={{
                     __html: sanitizeHTML(
@@ -511,18 +512,40 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
           )}
         </div>
 
+        {/* Indecision & Decision Matrix Suggestion */}
+        {/(can't decide|cannot decide|trouble deciding|problem deciding|having problem deciding|hard to choose|stuck between|torn between|help me decide|should i .* or .*)/i.test(quickThought) && (
+          <div className="mb-2 p-2.5 bg-amber-50 dark:bg-[#22170b] border border-amber-300 dark:border-amber-700/80 rounded-xl flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Scale className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <p className="text-[11px] font-bold text-amber-950 dark:text-amber-200 truncate">
+                Facing a tough choice? The <strong>Decision Matrix Agent</strong> can resolve this.
+              </p>
+            </div>
+            {onNavigateTab && (
+              <button
+                type="button"
+                onClick={() => onNavigateTab('decision', { taskText: quickThought })}
+                className="px-2.5 py-1 bg-amber-400 dark:bg-amber-500 hover:bg-amber-300 text-slate-950 text-[11px] font-black rounded-lg shrink-0 flex items-center gap-1 cursor-pointer transition-all"
+              >
+                <span>Evaluate</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        )}
+
         <form onSubmit={handleQuickSend} className="relative mt-2">
           <input
             type="text"
             value={quickThought}
             onChange={(e) => setQuickThought(e.target.value)}
-            placeholder="Dump a thought to RICHA..."
-            className="w-full bg-slate-100 border border-slate-300 rounded-xl pl-4 pr-16 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white text-slate-900 font-medium"
+            placeholder="Dump a thought to RICHA... (or e.g. 'Can't decide between A and B')"
+            className="w-full bg-slate-100 dark:bg-[#0c1424] border border-slate-300 dark:border-slate-700 rounded-xl pl-4 pr-16 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white dark:focus:bg-[#0c1424] text-slate-900 dark:text-slate-100 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
           <button
             type="submit"
             disabled={!quickThought.trim() || loading}
-            className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-extrabold text-[11px] rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+            className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-500 disabled:opacity-40 text-white font-extrabold text-[11px] rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
           >
             {loading ? <Sparkles className="w-3 h-3 animate-spin" /> : <span>SEND</span>}
           </button>
@@ -530,13 +553,13 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
       </section>
 
       {/* 2. Executive Load & Active Plan */}
-      <section className={`${bentoDensity === 'calm' ? 'md:col-span-6 lg:col-span-6' : 'md:col-span-6 lg:col-span-3'} bg-indigo-600 border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] text-white flex flex-col justify-between`}>
+      <section className={`${bentoDensity === 'calm' ? 'md:col-span-6 lg:col-span-6' : 'md:col-span-6 lg:col-span-3'} bg-indigo-600 dark:bg-[#121730] border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] text-white flex flex-col justify-between`}>
         <div>
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-extrabold opacity-90 uppercase tracking-widest">
+            <p className="text-[11px] font-extrabold opacity-90 uppercase tracking-widest text-indigo-100">
               Executive Load
             </p>
-            <span className="text-[10px] font-bold bg-indigo-800/80 px-2 py-0.5 rounded-md border border-indigo-400/40">
+            <span className="text-[10px] font-bold bg-indigo-800/80 dark:bg-indigo-900/80 px-2 py-0.5 rounded-md border border-indigo-400/40">
               AGENT 1 • PLANNER
             </span>
           </div>
@@ -555,7 +578,7 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
 
           {/* Active Micro-Plan indicator if present */}
           {activePlan?.task && (
-            <div className="mt-4 p-2.5 bg-indigo-700/80 rounded-xl border border-indigo-400/40 text-xs">
+            <div className="mt-4 p-2.5 bg-indigo-700/80 dark:bg-indigo-900/60 rounded-xl border border-indigo-400/40 text-xs">
               <p className="font-extrabold text-indigo-100 truncate">Plan: {activePlan.task}</p>
               {activePlan.steps && (
                 <div className="flex items-center justify-between mt-1 text-[11px] text-indigo-200 font-bold">
@@ -564,7 +587,7 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
                   </span>
                   <button
                     onClick={() => onNavigateTab('planner')}
-                    className="underline hover:text-white"
+                    className="underline hover:text-white cursor-pointer"
                   >
                     Resume →
                   </button>
@@ -575,7 +598,7 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
         </div>
 
         <div className="mt-4 pt-4 border-t border-indigo-500/40">
-          <p className="text-[11px] leading-relaxed opacity-95">
+          <p className="text-[11px] leading-relaxed opacity-95 text-indigo-100">
             {executiveLoad > 60
               ? "High load detected. Planner Agent recommends 4D prioritizer or 15-minute time-boxing to prevent paralysis."
               : "Executive rhythm is sustainable. 1-2 prioritized focus blocks recommended."}
@@ -599,12 +622,12 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
       </section>
 
       {/* 3. Wellbeing & Sensory Check */}
-      <section className={`${bentoDensity === 'calm' ? 'md:col-span-12 lg:col-span-12' : 'md:col-span-12 lg:col-span-4'} bg-[#E2F5E9] border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between`}>
+      <section className={`${bentoDensity === 'calm' ? 'md:col-span-12 lg:col-span-12' : 'md:col-span-12 lg:col-span-4'} bg-[#E2F5E9] dark:bg-[#0c2018] border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between`}>
         <div>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <div className={`w-2.5 h-2.5 rounded-full ${isBurnoutRisk ? 'bg-amber-500' : 'bg-emerald-500'} animate-pulse`}></div>
-              <p className="text-[11px] font-extrabold text-emerald-900 uppercase tracking-wider">
+              <p className="text-[11px] font-extrabold text-emerald-900 dark:text-emerald-300 uppercase tracking-wider">
                 Wellbeing Agent
               </p>
             </div>
@@ -613,10 +636,10 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
             </span>
           </div>
 
-          <h3 className="text-lg font-extrabold text-slate-900 mt-1">
+          <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mt-1">
             Current Mood: <span className="capitalize">{latestMood}</span>
           </h3>
-          <p className="text-xs text-emerald-900/90 mt-1.5 leading-relaxed">
+          <p className="text-xs text-emerald-900/90 dark:text-emerald-200 mt-1.5 leading-relaxed">
             {isBurnoutRisk
               ? "Sensory overwhelm or low energy detected from recent entries. Recommended: take a sensory break or dim environment."
               : "Rhythm is balanced. Emotional landmarks and reflections show grounded nervous system regulation."}
@@ -629,7 +652,7 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
               <div
                 key={i}
                 className={`w-2 rounded-xs transition-all ${
-                  i < latestEnergy * 2 ? 'bg-emerald-600' : 'bg-emerald-300'
+                  i < latestEnergy * 2 ? 'bg-emerald-600 dark:bg-emerald-500' : 'bg-emerald-300 dark:bg-emerald-800'
                 }`}
                 style={{ height: `${h * 4}px` }}
               ></div>
@@ -638,7 +661,7 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
 
           <button
             onClick={() => onNavigateTab('wellbeing')}
-            className="text-xs font-bold text-emerald-900 hover:text-emerald-950 flex items-center gap-1 underline underline-offset-2 cursor-pointer"
+            className="text-xs font-bold text-emerald-900 dark:text-emerald-300 hover:text-emerald-950 dark:hover:text-emerald-100 flex items-center gap-1 underline underline-offset-2 cursor-pointer"
           >
             <span>Sensory Shield Check-in</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -650,264 +673,264 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
       {bentoDensity === 'detailed' ? (
         <>
           {/* 4. Kanban Sprint Summary (Span 7 on desktop) */}
-          <section className="md:col-span-12 lg:col-span-7 bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
-        <div>
-          <div className="flex justify-between items-center mb-4">
+          <section className="md:col-span-12 lg:col-span-7 bg-white dark:bg-[#111a2e] border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
             <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
-                Agent 6 • Flow Board
-              </span>
-              <h3 className="text-lg font-bold text-slate-900">Active Sprint & Flow State</h3>
-            </div>
-            <button
-              onClick={() => onNavigateTab('kanban')}
-              className="text-xs text-indigo-600 font-extrabold hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <span>VIEW BOARD</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-              <p className="text-[10px] font-bold text-slate-500 uppercase">Backlog</p>
-              <p className="text-2xl font-black mt-1 text-slate-800">{kanbanStats.backlog}</p>
-              <p className="text-[10px] text-slate-400 mt-1">Low friction queue</p>
-            </div>
-            <div className="bg-amber-50 p-4 rounded-xl border border-amber-300">
-              <p className="text-[10px] font-bold text-amber-700 uppercase">In Progress</p>
-              <p className="text-2xl font-black mt-1 text-amber-800">
-                {kanbanStats.inProgress} <span className="text-xs font-normal opacity-70">/ 2 WIP</span>
-              </p>
-              <p className="text-[10px] text-amber-700 mt-1">Focus locked</p>
-            </div>
-            <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-300">
-              <p className="text-[10px] font-bold text-emerald-700 uppercase">Done Today</p>
-              <p className="text-2xl font-black mt-1 text-emerald-800">{kanbanStats.done}</p>
-              <p className="text-[10px] text-emerald-700 mt-1">Wins celebrated</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-          <span className="flex items-center gap-1.5 text-slate-700 font-medium">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            WIP Protection: Max 2 tasks in focus
-          </span>
-          <button
-            onClick={() => onNavigateTab('prioritizer')}
-            className="font-bold text-indigo-600 hover:underline cursor-pointer"
-          >
-            4D Review
-          </button>
-        </div>
-      </section>
-
-      {/* 5. Habit Consistency Bento Tile with Direct Toggling (Span 5 on desktop) */}
-      <section className="md:col-span-12 lg:col-span-5 bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">
-              Daily Anchors & Footprint
-            </h3>
-            <button
-              onClick={() => onNavigateTab('habits')}
-              className="text-xs text-indigo-600 font-bold hover:underline cursor-pointer"
-            >
-              All Anchors
-            </button>
-          </div>
-
-          <div className="space-y-3.5">
-            {habitsList.length > 0 ? (
-              habitsList.slice(0, 3).map((habit) => (
-                <div key={habit.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 max-w-[210px]">
-                    <button
-                      type="button"
-                      onClick={() => handleToggleHabit(habit.id)}
-                      title="Toggle completion"
-                      className={`w-5 h-5 rounded-md border-2 border-slate-900 flex items-center justify-center transition-colors cursor-pointer ${
-                        habit.completedToday ? 'bg-emerald-600 text-white' : 'bg-white hover:bg-slate-100 text-transparent'
-                      }`}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    </button>
-                    <span className={`text-xs font-bold truncate ${habit.completedToday ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
-                      {habit.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-extrabold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200 mr-1">
-                      {habit.streak || 1} logged
-                    </span>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4].map((step) => (
-                        <div
-                          key={step}
-                          className={`w-3.5 h-3.5 rounded-xs ${
-                            step <= Math.min(4, habit.streak)
-                              ? 'bg-indigo-600'
-                              : 'bg-indigo-100'
-                          }`}
-                        ></div>
-                      ))}
-                    </div>
-                  </div>
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                    Agent 6 • Flow Board
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Sprint & Flow State</h3>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-4 text-xs text-slate-400">
-                <p>No habits configured yet.</p>
                 <button
-                  onClick={() => onNavigateTab('habits')}
-                  className="mt-1 font-bold text-indigo-600 hover:underline cursor-pointer"
+                  onClick={() => onNavigateTab('kanban')}
+                  className="text-xs text-indigo-600 dark:text-indigo-400 font-extrabold hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  + Add first micro-habit
+                  <span>VIEW BOARD</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
-            )}
-          </div>
-        </div>
 
-        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-          <span className="flex items-center gap-1 text-teal-700 font-bold">
-            <HeartHandshake className="w-3.5 h-3.5 text-teal-600" />
-            <span>Cumulative Footprint: {habitsList.reduce((acc, h) => acc + (h.streak || 1), 0)} anchors celebrated</span>
-          </span>
-          <button
-            onClick={() => onNavigateTab('admin')}
-            className="text-slate-600 font-bold hover:text-slate-900 cursor-pointer"
-          >
-            Admin Blocks →
-          </button>
-        </div>
-      </section>
-
-      {/* 6. Socratic Executive Inquiry & Reasoning Tile (Span 12) */}
-      <section className="col-span-12 bg-amber-50/80 border-2 border-slate-900 rounded-2xl p-5 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-amber-200 border-2 border-slate-900 flex items-center justify-center shadow-[1px_1px_0px_0px_rgba(15,23,42,1)]">
-              <BrainCircuit className="w-4 h-4 text-amber-900" />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-slate-50 dark:bg-slate-900/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Backlog</p>
+                  <p className="text-2xl font-black mt-1 text-slate-800 dark:text-slate-100">{kanbanStats.backlog}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Low friction queue</p>
+                </div>
+                <div className="bg-amber-50 dark:bg-amber-950/40 p-4 rounded-xl border border-amber-300 dark:border-amber-800/80">
+                  <p className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase">In Progress</p>
+                  <p className="text-2xl font-black mt-1 text-amber-800 dark:text-amber-200">
+                    {kanbanStats.inProgress} <span className="text-xs font-normal opacity-70">/ 2 WIP</span>
+                  </p>
+                  <p className="text-[10px] text-amber-700 dark:text-amber-300 mt-1">Focus locked</p>
+                </div>
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-xl border border-emerald-300 dark:border-emerald-800/80">
+                  <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">Done Today</p>
+                  <p className="text-2xl font-black mt-1 text-emerald-800 dark:text-emerald-200">{kanbanStats.done}</p>
+                  <p className="text-[10px] text-emerald-700 dark:text-emerald-300 mt-1">Wins celebrated</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                Socratic Daily Inquiry & Reasoning
-              </h3>
-              <p className="text-[11px] text-slate-600 font-medium">
-                Challenge assumptions, unpack cognitive freeze, and discover the Minimum Viable Action.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-extrabold px-2 py-0.5 bg-amber-200 text-amber-900 border border-amber-400 rounded-full uppercase">
-              Cross-Agent Reasoner
-            </span>
-          </div>
-        </div>
 
-        {/* Quick Socratic Inquiry Chips */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          <button
-            type="button"
-            onClick={() => handleRunSocraticInquiry("What is making today's highest priority task feel like a physical wall?")}
-            className="text-[11px] font-bold px-2.5 py-1 bg-white hover:bg-amber-100 text-slate-800 border border-amber-300 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-          >
-            <HelpCircle className="w-3 h-3 text-amber-600" />
-            <span>Why does step 1 feel like a wall?</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleRunSocraticInquiry("What would happen if I stopped perfectionist standards and did only 50% today?")}
-            className="text-[11px] font-bold px-2.5 py-1 bg-white hover:bg-amber-100 text-slate-800 border border-amber-300 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-          >
-            <HelpCircle className="w-3 h-3 text-amber-600" />
-            <span>What if I only do 50% quality?</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleRunSocraticInquiry("Which item on my plate can I safely delete with zero real consequence?")}
-            className="text-[11px] font-bold px-2.5 py-1 bg-white hover:bg-amber-100 text-slate-800 border border-amber-300 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-          >
-            <HelpCircle className="w-3 h-3 text-amber-600" />
-            <span>What can I delete forever?</span>
-          </button>
-        </div>
-
-        {/* Socratic Insight output or input field */}
-        {socraticInsight ? (
-          <div className="bg-white border-2 border-slate-900 rounded-xl p-3.5 mb-3 text-xs text-slate-800 leading-relaxed font-sans shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
-            <div className="flex items-start justify-between gap-2">
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: sanitizeHTML(socraticInsight.split('---')[0].trim())
-                }}
-              />
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                WIP Protection: Max 2 tasks in focus
+              </span>
               <button
-                type="button"
-                onClick={() => setSocraticInsight(null)}
-                className="text-[10px] font-bold text-slate-400 hover:text-slate-700 underline shrink-0 cursor-pointer"
+                onClick={() => onNavigateTab('prioritizer')}
+                className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
               >
-                Clear
+                4D Review
               </button>
             </div>
-          </div>
-        ) : (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleRunSocraticInquiry();
-            }}
-            className="flex gap-2"
-          >
-            <input
-              type="text"
-              value={socraticInput}
-              onChange={(e) => setSocraticInput(e.target.value)}
-              placeholder="Ask Socratic Coach: e.g. Why am I avoiding the laundry / tax invoice?"
-              className="flex-1 bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900 text-slate-900 font-medium"
-            />
-            <button
-              type="submit"
-              disabled={!socraticInput.trim() || socraticLoading}
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-extrabold text-xs rounded-xl border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1 cursor-pointer transition-all uppercase tracking-wider"
-            >
-              {socraticLoading ? <Sparkles className="w-3.5 h-3.5 animate-spin" /> : <span>INQUIRE</span>}
-            </button>
-          </form>
-        )}
-      </section>
+          </section>
 
-      {/* 7. System Logs Footer Tile (Span 12) */}
-      <footer className="col-span-12 flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-slate-900 border-2 border-slate-900 rounded-2xl text-white shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] gap-3">
-        <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono">
-          <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            ENGINE: GEMINI-3.7-FLASH (ACTIVE LADDER)
-          </span>
-          <span className="text-slate-400">SESSION: JWT-VERIFIED</span>
-          <span className="text-slate-400">SYNC: CROSS-AGENT EVENT BUS</span>
-        </div>
-        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-          RICHA (Reflective Insight & Cognitive Helper Assistant) • ZERO-TRUST ARCHITECTURE
-        </div>
-      </footer>
+          {/* 5. Habit Consistency Bento Tile with Direct Toggling (Span 5 on desktop) */}
+          <section className="md:col-span-12 lg:col-span-5 bg-white dark:bg-[#111a2e] border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                  Daily Anchors & Footprint
+                </h3>
+                <button
+                  onClick={() => onNavigateTab('habits')}
+                  className="text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline cursor-pointer"
+                >
+                  All Anchors
+                </button>
+              </div>
+
+              <div className="space-y-3.5">
+                {habitsList.length > 0 ? (
+                  habitsList.slice(0, 3).map((habit) => (
+                    <div key={habit.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 max-w-[210px]">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleHabit(habit.id)}
+                          title="Toggle completion"
+                          className={`w-5 h-5 rounded-md border-2 border-slate-900 dark:border-slate-600 flex items-center justify-center transition-colors cursor-pointer ${
+                            habit.completedToday ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-transparent'
+                          }`}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        </button>
+                        <span className={`text-xs font-bold truncate ${habit.completedToday ? 'text-slate-400 dark:text-slate-500 line-through' : 'text-slate-800 dark:text-slate-200'}`}>
+                          {habit.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-extrabold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800 mr-1">
+                          {habit.streak || 1} logged
+                        </span>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4].map((step) => (
+                            <div
+                              key={step}
+                              className={`w-3.5 h-3.5 rounded-xs ${
+                                step <= Math.min(4, habit.streak)
+                                  ? 'bg-indigo-600 dark:bg-indigo-500'
+                                  : 'bg-indigo-100 dark:bg-indigo-950'
+                              }`}
+                            ></div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-xs text-slate-400 dark:text-slate-500">
+                    <p>No habits configured yet.</p>
+                    <button
+                      onClick={() => onNavigateTab('habits')}
+                      className="mt-1 font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                    >
+                      + Add first micro-habit
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1 text-teal-700 dark:text-teal-300 font-bold">
+                <HeartHandshake className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                <span>Cumulative Footprint: {habitsList.reduce((acc, h) => acc + (h.streak || 1), 0)} anchors celebrated</span>
+              </span>
+              <button
+                onClick={() => onNavigateTab('admin')}
+                className="text-slate-600 dark:text-slate-400 font-bold hover:text-slate-900 dark:hover:text-white cursor-pointer"
+              >
+                Admin Blocks →
+              </button>
+            </div>
+          </section>
+
+          {/* 6. Socratic Executive Inquiry & Reasoning Tile (Span 12) */}
+          <section className="col-span-12 bg-amber-50/80 dark:bg-[#18130a] border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-amber-200 dark:bg-amber-900/60 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[1px_1px_0px_0px_rgba(15,23,42,1)]">
+                  <BrainCircuit className="w-4 h-4 text-amber-900 dark:text-amber-200" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    Socratic Daily Inquiry & Reasoning
+                  </h3>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
+                    Challenge assumptions, unpack cognitive freeze, and discover the Minimum Viable Action.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-extrabold px-2 py-0.5 bg-amber-200 dark:bg-amber-900/70 text-amber-900 dark:text-amber-200 border border-amber-400 dark:border-amber-700 rounded-full uppercase">
+                  Cross-Agent Reasoner
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Socratic Inquiry Chips */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => handleRunSocraticInquiry("What is making today's highest priority task feel like a physical wall?")}
+                className="text-[11px] font-bold px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-amber-100 dark:hover:bg-amber-950/70 text-slate-800 dark:text-slate-200 border border-amber-300 dark:border-amber-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <HelpCircle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                <span>Why does step 1 feel like a wall?</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRunSocraticInquiry("What would happen if I stopped perfectionist standards and did only 50% today?")}
+                className="text-[11px] font-bold px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-amber-100 dark:hover:bg-amber-950/70 text-slate-800 dark:text-slate-200 border border-amber-300 dark:border-amber-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <HelpCircle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                <span>What if I only do 50% quality?</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRunSocraticInquiry("Which item on my plate can I safely delete with zero real consequence?")}
+                className="text-[11px] font-bold px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-amber-100 dark:hover:bg-amber-950/70 text-slate-800 dark:text-slate-200 border border-amber-300 dark:border-amber-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <HelpCircle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                <span>What can I delete forever?</span>
+              </button>
+            </div>
+
+            {/* Socratic Insight output or input field */}
+            {socraticInsight ? (
+              <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl p-3.5 mb-3 text-xs text-slate-800 dark:text-slate-100 leading-relaxed font-sans shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                <div className="flex items-start justify-between gap-2">
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeHTML(socraticInsight.split('---')[0].trim())
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSocraticInsight(null)}
+                    className="text-[10px] font-bold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline shrink-0 cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleRunSocraticInquiry();
+                }}
+                className="flex gap-2"
+              >
+                <input
+                  type="text"
+                  value={socraticInput}
+                  onChange={(e) => setSocraticInput(e.target.value)}
+                  placeholder="Ask Socratic Coach: e.g. Why am I avoiding the laundry / tax invoice?"
+                  className="flex-1 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-600 text-slate-900 dark:text-white font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                />
+                <button
+                  type="submit"
+                  disabled={!socraticInput.trim() || socraticLoading}
+                  className="px-4 py-2 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-500 disabled:opacity-40 text-white font-extrabold text-xs rounded-xl border-2 border-slate-900 dark:border-indigo-500 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1 cursor-pointer transition-all uppercase tracking-wider"
+                >
+                  {socraticLoading ? <Sparkles className="w-3.5 h-3.5 animate-spin" /> : <span>INQUIRE</span>}
+                </button>
+              </form>
+            )}
+          </section>
+
+          {/* 7. System Logs Footer Tile (Span 12) */}
+          <footer className="col-span-12 flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-slate-900 dark:bg-[#070b14] border-2 border-slate-900 dark:border-slate-800 rounded-2xl text-white shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] gap-3">
+            <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono">
+              <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                ENGINE: GEMINI-3.7-FLASH (ACTIVE LADDER)
+              </span>
+              <span className="text-slate-400">SESSION: JWT-VERIFIED</span>
+              <span className="text-slate-400">SYNC: CROSS-AGENT EVENT BUS</span>
+            </div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              RICHA (Reflective Insight & Cognitive Helper Assistant) • ZERO-TRUST ARCHITECTURE
+            </div>
+          </footer>
         </>
       ) : (
-        <div className="col-span-12 bg-white/80 border-2 border-dashed border-slate-300 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-600">
+        <div className="col-span-12 bg-white/80 dark:bg-[#111a2e] border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-600 dark:text-slate-300">
           <div className="flex items-center gap-2.5">
             <span className="text-2xl">🌿</span>
             <div>
-              <p className="text-xs font-bold text-slate-800">Calm Horizon Active (Visual Overload Shield)</p>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs font-bold text-slate-800 dark:text-white">Calm Horizon Active (Visual Overload Shield)</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Kanban flow board, daily habit anchors, and Socratic deep dive are safely tucked away to protect your focus.
               </p>
             </div>
           </div>
           <button
             onClick={() => setBentoDensity('detailed')}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold rounded-xl border border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] transition-all cursor-pointer shrink-0"
+            className="px-4 py-2 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-500 text-white text-xs font-extrabold rounded-xl border border-slate-900 dark:border-indigo-500 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] transition-all cursor-pointer shrink-0"
           >
             Switch to Detailed Grid
           </button>

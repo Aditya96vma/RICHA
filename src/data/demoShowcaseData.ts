@@ -256,5 +256,19 @@ export const DEMO_SHOWCASE_DATA = {
       { id: 'h-3', name: 'Zero-Notification Focus Block', streak: 3, frequency: 'daily', domain: 'work' },
       { id: 'h-4', name: 'Sensory Dimming at 9:30 PM', streak: 8, frequency: 'daily', domain: 'health' }
     ]
+  },
+
+  decision: {
+    title: 'Agent 8: Decision Matrix & Suggestion Advisor',
+    agentBadge: 'Agent 8 • Multi-Criteria Psychology',
+    tagline: 'Defeating analysis paralysis with Herbert Simon Satisficing & Heath W.R.A.P.',
+    description: 'When torn between competing options, evaluates reversibility, 10/10/10 perspective, pre-mortem risk, and somatic gut-checks to find the Minimum Viable Commitment.',
+    highlightInsight: 'Identified reversible Two-Way Door on "Finish Report vs. Rest Baseline". Recommended 15-minute low-stakes trial to break inertia.',
+    sampleDilemma: 'Should I push through to finish the quarterly sprint report tonight, or stop now and recover baseline energy?',
+    sampleOptions: [
+      { id: 'opt_1', title: 'Option A: Push through to finish tonight (Maximizing)', scores: { energy: 2, reversibility: 3, values: 4, relief: 2, regret: 3 } },
+      { id: 'opt_2', title: 'Option B: Stop now and recover baseline (Self-Care)', scores: { energy: 5, reversibility: 5, values: 4, relief: 5, regret: 3 } },
+      { id: 'opt_3', title: 'Option C: 15-minute low-stakes trial + shut down (Satisficing)', scores: { energy: 4, reversibility: 5, values: 5, relief: 4, regret: 5 } }
+    ]
   }
 };

@@ -20,8 +20,152 @@ import {
   Layers,
   ShieldCheck,
   Check,
-  ArrowRight
+  ArrowRight,
+  CheckCircle2,
+  Copy,
+  Edit3,
+  Calendar,
+  HelpCircle
 } from 'lucide-react';
+
+interface DeleteItem {
+  id: string;
+  title: string;
+  explanation: string;
+  dropped: boolean;
+}
+
+interface DelayItem {
+  id: string;
+  title: string;
+  schedule: string;
+  parked: boolean;
+}
+
+interface DiminishItem {
+  id: string;
+  title: string;
+  mvv: string;
+  sentToPlanner: boolean;
+}
+
+interface DelegateItem {
+  id: string;
+  title: string;
+  notes: string;
+  copied: boolean;
+}
+
+interface Interactive4DState {
+  deleteItems: DeleteItem[];
+  delayItems: DelayItem[];
+  diminishItems: DiminishItem[];
+  delegateItems: DelegateItem[];
+}
+
+function parse4DToInteractiveSteps(rawText: string, rawTasks: string): Interactive4DState {
+  const cleanMd = rawText || '';
+
+  const getSection = (keyword: string) => {
+    const match = cleanMd.match(new RegExp(`(?:###|\\*\\*)[^\\n]*\\b${keyword}\\b[\\s\\S]*?(?=(?:###|\\*\\*\\s*[1-4]?\\.?\\s*(?:DELETE|DELAY|DIMINISH|DELEGATE|DO)|---|$))`, 'i'));
+    return match ? match[0] : '';
+  };
+
+  const extractItems = (sectionStr: string) => {
+    const lines = sectionStr.split('\n');
+    const items: Array<{ title: string; detail: string }> = [];
+    for (const line of lines) {
+      const trimmed = line.replace(/^[\s*•\-]+/, '').trim();
+      if (!trimmed || trimmed.startsWith('###') || trimmed.startsWith('**') || trimmed.toLowerCase().includes('done this session') || trimmed.toLowerCase().includes('saved to:') || trimmed.toLowerCase().includes('suggested next step:')) {
+        continue;
+      }
+      const parts = trimmed.replace(/\*\*/g, '').split(/:\s*(.*)/s);
+      if (parts.length >= 2 && parts[0].trim()) {
+        items.push({ title: parts[0].trim().replace(/^[1-9]\.\s*/, ''), detail: parts[1]?.trim() || '' });
+      } else if (trimmed.length > 3) {
+        items.push({ title: trimmed.replace(/^[1-9]\.\s*/, ''), detail: '' });
+      }
+    }
+    return items;
+  };
+
+  const delSection = getSection('DELETE');
+  const delaySection = getSection('DELAY');
+  const dimSection = getSection('DIMINISH');
+  const delegSection = getSection('DELEGATE');
+
+  const delItems: DeleteItem[] = extractItems(delSection).map((it, idx) => ({
+    id: `del_${idx}`,
+    title: it.title,
+    explanation: it.detail || 'Non-essential today. Safe to drop with zero guilt.',
+    dropped: false
+  }));
+
+  const delayItems: DelayItem[] = extractItems(delaySection).map((it, idx) => ({
+    id: `delay_${idx}`,
+    title: it.title,
+    schedule: 'Tomorrow 10:00 AM',
+    parked: false
+  }));
+
+  const dimItems: DiminishItem[] = extractItems(dimSection).map((it, idx) => ({
+    id: `dim_${idx}`,
+    title: it.title,
+    mvv: it.detail || 'Complete a 15-minute minimum viable version',
+    sentToPlanner: false
+  }));
+
+  const delegItems: DelegateItem[] = extractItems(delegSection).map((it, idx) => ({
+    id: `deleg_${idx}`,
+    title: it.title,
+    notes: it.detail || 'Ask peer for assistance or use quick template',
+    copied: false
+  }));
+
+  // Fallback if parsing found nothing
+  if (dimItems.length === 0 && delItems.length === 0) {
+    const rawLines = rawTasks.split('\n').map(l => l.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean);
+    if (rawLines[0]) {
+      dimItems.push({
+        id: 'dim_0',
+        title: rawLines[0],
+        mvv: 'Complete 15-minute focused atomic interval',
+        sentToPlanner: false
+      });
+    }
+    if (rawLines[1]) {
+      delayItems.push({
+        id: 'delay_0',
+        title: rawLines[1],
+        schedule: 'Tomorrow 10:00 AM',
+        parked: false
+      });
+    }
+    if (rawLines[2]) {
+      delItems.push({
+        id: 'del_0',
+        title: rawLines[2],
+        explanation: 'Non-critical distraction; safe to drop today.',
+        dropped: false
+      });
+    }
+    if (rawLines[3]) {
+      delegItems.push({
+        id: 'deleg_0',
+        title: rawLines[3],
+        notes: 'Hand off to partner or automate',
+        copied: false
+      });
+    }
+  }
+
+  return {
+    deleteItems: delItems,
+    delayItems,
+    diminishItems: dimItems,
+    delegateItems: delegItems
+  };
+}
 
 interface Prioritizer4DProps {
   onNavigateTab?: (tab: string, payload?: any) => void;
@@ -39,6 +183,20 @@ export function Prioritizer4D({ onNavigateTab, handoffData, onClearHandoff }: Pr
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [savedToJournal, setSavedToJournal] = useState(false);
   const [pushedToKanban, setPushedToKanban] = useState(false);
+  const [activeViewMode, setActiveViewMode] = useState<'interactive_steps' | 'markdown'>('interactive_steps');
+  const [stepData, setStepData] = useState<Interactive4DState>({
+    deleteItems: [],
+    delayItems: [],
+    diminishItems: [],
+    delegateItems: []
+  });
+
+  // Keep interactive step data synced when result is produced or loaded
+  useEffect(() => {
+    if (result) {
+      setStepData(parse4DToInteractiveSteps(result, taskList));
+    }
+  }, [result]);
 
   const loadDemoTriage = () => {
     const demoText = `1. Finish and email Q3 invoice draft to Client Acme
@@ -125,7 +283,8 @@ export function Prioritizer4D({ onNavigateTab, handoffData, onClearHandoff }: Pr
         body: JSON.stringify({
           content: `4D PRIORITIZATION REVIEW:\n${taskList}`,
           sessionId: 'prioritizer-4d',
-          contextHint: 'review_request'
+          contextHint: 'review_request',
+          overrideAgent: 'prioritizer'
         })
       });
 
@@ -274,6 +433,171 @@ export function Prioritizer4D({ onNavigateTab, handoffData, onClearHandoff }: Pr
     } catch (err) {
       console.warn('Journal save failed:', err);
       setToastMessage('Saved to local journal draft.');
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  };
+
+  // Step 1: Drop Deletion
+  const toggleDropDelete = (id: string) => {
+    setStepData(prev => ({
+      ...prev,
+      deleteItems: prev.deleteItems.map(item =>
+        item.id === id ? { ...item, dropped: !item.dropped } : item
+      )
+    }));
+  };
+
+  // Step 2: Set Delay Schedule
+  const updateDelaySchedule = (id: string, schedule: string) => {
+    setStepData(prev => ({
+      ...prev,
+      delayItems: prev.delayItems.map(item =>
+        item.id === id ? { ...item, schedule } : item
+      )
+    }));
+  };
+
+  // Step 2: Park single delayed task
+  const parkSingleDelayedTask = async (id: string) => {
+    const item = stepData.delayItems.find(i => i.id === id);
+    if (!item || item.parked) return;
+    try {
+      const token = await getIdToken();
+      await fetch('/api/data/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          title: `[Delayed] ${item.title}`,
+          description: `Parked for ${item.schedule} via 4D Step 2`,
+          column: 'backlog',
+          priority: 'Low',
+          tags: ['4d-delayed', 'step-2']
+        })
+      });
+      setStepData(prev => ({
+        ...prev,
+        delayItems: prev.delayItems.map(it => it.id === id ? { ...it, parked: true } : it)
+      }));
+      setToastMessage(`Parked "${item.title}" into Kanban Backlog!`);
+      setTimeout(() => setToastMessage(null), 3000);
+    } catch (err) {
+      console.warn('Park failed:', err);
+    }
+  };
+
+  // Step 3: Update MVV
+  const updateDiminishMVV = (id: string, mvv: string) => {
+    setStepData(prev => ({
+      ...prev,
+      diminishItems: prev.diminishItems.map(item =>
+        item.id === id ? { ...item, mvv } : item
+      )
+    }));
+  };
+
+  // Step 3: Send single diminished item to Planner
+  const sendItemToPlanner = (item: DiminishItem) => {
+    if (!onNavigateTab) return;
+    onNavigateTab('planner', {
+      taskText: `${item.title} (MVV: ${item.mvv})`,
+      contextNotes: 'From 4D Step 3 Diminish'
+    });
+  };
+
+  // Step 4: Update delegate notes
+  const updateDelegateNotes = (id: string, notes: string) => {
+    setStepData(prev => ({
+      ...prev,
+      delegateItems: prev.delegateItems.map(item =>
+        item.id === id ? { ...item, notes } : item
+      )
+    }));
+  };
+
+  // Step 4: Copy handoff template
+  const copyDelegateTemplate = (item: DelegateItem) => {
+    const text = `Hi! Could you help take ownership of "${item.title}"? Context: ${item.notes || 'Delegating to streamline execution today.'} Thank you!`;
+    navigator.clipboard.writeText(text);
+    setStepData(prev => ({
+      ...prev,
+      delegateItems: prev.delegateItems.map(it => it.id === item.id ? { ...it, copied: true } : it)
+    }));
+    setToastMessage('Copied 1-sentence delegation ask to clipboard!');
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // Apply all 4 steps at once!
+  const handleApplyAll4DSteps = async () => {
+    try {
+      const token = await getIdToken();
+      
+      // 1. Mark all delete items as dropped
+      setStepData(prev => ({
+        ...prev,
+        deleteItems: prev.deleteItems.map(d => ({ ...d, dropped: true })),
+        delayItems: prev.delayItems.map(d => ({ ...d, parked: true }))
+      }));
+
+      // 2. Push all delay items to Kanban Backlog
+      const delayPromises = stepData.delayItems.map(it =>
+        fetch('/api/data/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            title: `[4D Delayed] ${it.title}`,
+            description: `Scheduled for ${it.schedule}`,
+            column: 'backlog',
+            priority: 'Low',
+            tags: ['4d-delayed', 'step-2']
+          })
+        })
+      );
+
+      // 3. Push primary diminish item to Kanban In-Progress
+      const primaryDiminish = stepData.diminishItems[0];
+      const diminishPromise = primaryDiminish ? fetch('/api/data/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          title: `[4D Focus MVV] ${primaryDiminish.title}`,
+          description: primaryDiminish.mvv,
+          column: 'in-progress',
+          priority: 'High',
+          tags: ['4d-focus', 'mvv']
+        })
+      }) : Promise.resolve();
+
+      // 4. Save journal entry
+      const journalBody = `### ⚖️ 4D Step-by-Step Triage Completed\n\n` +
+        `**Step 1 - Dropped With Zero Guilt**:\n` +
+        (stepData.deleteItems.length ? stepData.deleteItems.map(d => `- ~~${d.title}~~ (${d.explanation})`).join('\n') : '- (None)') + '\n\n' +
+        `**Step 2 - Delayed to Safe Buffers**:\n` +
+        (stepData.delayItems.length ? stepData.delayItems.map(d => `- ${d.title} -> ${d.schedule}`).join('\n') : '- (None)') + '\n\n' +
+        `**Step 3 - Diminished to MVV**:\n` +
+        (stepData.diminishItems.length ? stepData.diminishItems.map(d => `- **${d.title}**: ${d.mvv}`).join('\n') : '- (None)') + '\n\n' +
+        `**Step 4 - Delegated / Automated**:\n` +
+        (stepData.delegateItems.length ? stepData.delegateItems.map(d => `- ${d.title}: ${d.notes}`).join('\n') : '- (None)');
+
+      const journalPromise = fetch('/api/data/journal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          entryText: journalBody,
+          mood: 'focused',
+          tags: ['4d-applied', 'step-by-step', 'morgenstern'],
+          sentimentScore: 0.85
+        })
+      });
+
+      await Promise.all([...delayPromises, diminishPromise, journalPromise]);
+
+      setPushedToKanban(true);
+      setSavedToJournal(true);
+      setToastMessage('🎉 All 4D steps filled & applied to your workspace (Backlog, In-Progress, & Journal)!');
+      setTimeout(() => setToastMessage(null), 5000);
+    } catch (err) {
+      console.warn('Failed to apply all 4D steps:', err);
+      setToastMessage('Steps applied locally!');
       setTimeout(() => setToastMessage(null), 4000);
     }
   };
@@ -430,10 +754,38 @@ export function Prioritizer4D({ onNavigateTab, handoffData, onClearHandoff }: Pr
         </div>
 
         <div className="lg:col-span-7 bg-white p-6 rounded-2xl border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
-              4D Action Breakdown
-            </h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                4D Action Breakdown
+              </h3>
+              {result && (
+                <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-300 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setActiveViewMode('interactive_steps')}
+                    className={`px-2 py-0.5 rounded-md font-bold text-[11px] transition-all ${
+                      activeViewMode === 'interactive_steps'
+                        ? 'bg-amber-400 text-slate-950 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    ✍️ Step Filler
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveViewMode('markdown')}
+                    className={`px-2 py-0.5 rounded-md font-bold text-[11px] transition-all ${
+                      activeViewMode === 'markdown'
+                        ? 'bg-amber-400 text-slate-950 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    📋 Overview
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Cross-Tool Actions Ribbon */}
             {result && (
@@ -487,12 +839,292 @@ export function Prioritizer4D({ onNavigateTab, handoffData, onClearHandoff }: Pr
             )}
           </div>
 
-          <div className="flex-1 bg-slate-50 border-2 border-slate-900 rounded-xl p-5 overflow-y-auto min-h-[320px]">
+          <div className="flex-1 bg-slate-50 border-2 border-slate-900 rounded-xl p-4 overflow-y-auto min-h-[360px]">
             {result ? (
-              <div
-                className="prose prose-sm max-w-none text-slate-800 leading-relaxed font-sans"
-                dangerouslySetInnerHTML={{ __html: sanitizeHTML(result) }}
-              />
+              activeViewMode === 'interactive_steps' ? (
+                <div className="space-y-4">
+                  {/* Step-by-Step Guidance Callout */}
+                  <div className="p-3 bg-amber-50/80 border border-amber-300 rounded-xl flex items-start gap-2.5 text-xs text-amber-950">
+                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-bold">Step-by-Step 4D Filling Workspace</p>
+                      <p className="text-[11px] text-amber-800 font-medium">
+                        Julie Morgenstern's 4 steps to decompress your brain. Check off deletions, schedule delays, customize minimum viable versions, and apply them directly into your workspace.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Step 1: DELETE */}
+                  <div className="p-3.5 bg-white border-2 border-rose-200 rounded-xl space-y-2 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-black text-xs">
+                          1
+                        </div>
+                        <span className="text-xs font-black text-rose-950 uppercase tracking-wide flex items-center gap-1">
+                          <Trash2 className="w-3.5 h-3.5 text-rose-600" /> Step 1: Delete (Eliminate Guilt)
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                        Zero negative consequence
+                      </span>
+                    </div>
+
+                    {stepData.deleteItems.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">No tasks assigned to Delete.</p>
+                    ) : (
+                      <div className="space-y-2 pt-1">
+                        {stepData.deleteItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className={`p-2.5 rounded-lg border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                              item.dropped
+                                ? 'bg-emerald-50/70 border-emerald-300 line-through text-slate-400'
+                                : 'bg-slate-50 border-slate-200'
+                            }`}
+                          >
+                            <div className="min-w-0">
+                              <p className={`text-xs font-bold ${item.dropped ? 'text-emerald-800' : 'text-slate-900'}`}>
+                                {item.title}
+                              </p>
+                              {item.explanation && (
+                                <p className="text-[11px] text-slate-500 font-medium mt-0.5 no-underline">
+                                  {item.explanation}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => toggleDropDelete(item.id)}
+                              className={`px-2.5 py-1 text-[11px] font-extrabold rounded-md border transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
+                                item.dropped
+                                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs'
+                                  : 'bg-white hover:bg-rose-50 text-rose-700 border-rose-300'
+                              }`}
+                            >
+                              {item.dropped ? (
+                                <>
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>Dropped (+10 Bandwidth)</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Trash2 className="w-3 h-3" />
+                                  <span>Drop Without Guilt</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step 2: DELAY */}
+                  <div className="p-3.5 bg-white border-2 border-amber-200 rounded-xl space-y-2 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-black text-xs">
+                          2
+                        </div>
+                        <span className="text-xs font-black text-amber-950 uppercase tracking-wide flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-amber-600" /> Step 2: Delay (Schedule Safe Buffer)
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                        Protect executive focus
+                      </span>
+                    </div>
+
+                    {stepData.delayItems.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">No tasks assigned to Delay.</p>
+                    ) : (
+                      <div className="space-y-2.5 pt-1">
+                        {stepData.delayItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg space-y-2"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-xs font-bold text-slate-900">{item.title}</p>
+                              <button
+                                type="button"
+                                onClick={() => parkSingleDelayedTask(item.id)}
+                                disabled={item.parked}
+                                className={`px-2 py-1 text-[11px] font-extrabold rounded-md border transition-all shrink-0 flex items-center gap-1 ${
+                                  item.parked
+                                    ? 'bg-slate-200 text-slate-500 border-slate-300'
+                                    : 'bg-white hover:bg-amber-50 text-amber-800 border-amber-300 cursor-pointer'
+                                }`}
+                              >
+                                {item.parked ? <Check className="w-3 h-3 text-emerald-600" /> : <Calendar className="w-3 h-3 text-amber-600" />}
+                                <span>{item.parked ? 'Parked in Backlog' : 'Park in Backlog'}</span>
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                              <span className="text-slate-500 font-medium">Postpone until:</span>
+                              {['Tomorrow 10:00 AM', 'This Weekend', 'Next Monday'].map((preset) => (
+                                <button
+                                  key={preset}
+                                  type="button"
+                                  onClick={() => updateDelaySchedule(item.id, preset)}
+                                  className={`px-2 py-0.5 rounded-md font-bold text-[10px] border transition-all ${
+                                    item.schedule === preset
+                                      ? 'bg-amber-400 text-slate-950 border-slate-900 font-extrabold'
+                                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                                  }`}
+                                >
+                                  {preset}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step 3: DIMINISH */}
+                  <div className="p-3.5 bg-white border-2 border-indigo-200 rounded-xl space-y-2 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs">
+                          3
+                        </div>
+                        <span className="text-xs font-black text-indigo-950 uppercase tracking-wide flex items-center gap-1">
+                          <Scissors className="w-3.5 h-3.5 text-indigo-600" /> Step 3: Diminish (Minimum Viable Action)
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                        Overcome inertia
+                      </span>
+                    </div>
+
+                    {stepData.diminishItems.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">No tasks assigned to Diminish.</p>
+                    ) : (
+                      <div className="space-y-2.5 pt-1">
+                        {stepData.diminishItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg space-y-2"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-xs font-bold text-slate-900">{item.title}</p>
+                              {onNavigateTab && (
+                                <button
+                                  type="button"
+                                  onClick={() => sendItemToPlanner(item)}
+                                  className="px-2 py-1 text-[11px] font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white rounded-md border border-slate-900 shadow-2xs flex items-center gap-1 transition-all cursor-pointer"
+                                >
+                                  <Zap className="w-3 h-3" />
+                                  <span>Break Down in Planner</span>
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                                Minimum Viable Version (MVV):
+                              </label>
+                              <input
+                                type="text"
+                                value={item.mvv}
+                                onChange={(e) => updateDiminishMVV(item.id, e.target.value)}
+                                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium"
+                                placeholder="E.g. Do 10-15 min speed run or first draft only"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step 4: DELEGATE */}
+                  <div className="p-3.5 bg-white border-2 border-emerald-200 rounded-xl space-y-2 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-xs">
+                          4
+                        </div>
+                        <span className="text-xs font-black text-emerald-950 uppercase tracking-wide flex items-center gap-1">
+                          <Users className="w-3.5 h-3.5 text-emerald-600" /> Step 4: Delegate / Automate
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        Share the load
+                      </span>
+                    </div>
+
+                    {stepData.delegateItems.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">No tasks assigned to Delegate.</p>
+                    ) : (
+                      <div className="space-y-2.5 pt-1">
+                        {stepData.delegateItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg space-y-2"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-xs font-bold text-slate-900">{item.title}</p>
+                              <button
+                                type="button"
+                                onClick={() => copyDelegateTemplate(item)}
+                                className={`px-2 py-1 text-[11px] font-extrabold rounded-md border transition-all flex items-center gap-1 ${
+                                  item.copied
+                                    ? 'bg-emerald-600 text-white border-emerald-700'
+                                    : 'bg-white hover:bg-emerald-50 text-emerald-800 border-emerald-300 cursor-pointer'
+                                }`}
+                              >
+                                {item.copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3 text-emerald-600" />}
+                                <span>{item.copied ? 'Copied Ask!' : 'Copy 1-Line Ask'}</span>
+                              </button>
+                            </div>
+
+                            <input
+                              type="text"
+                              value={item.notes}
+                              onChange={(e) => updateDelegateNotes(item.id, e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-800 font-medium"
+                              placeholder="Notes or delegation context (e.g. ask Sarah or use template)"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Apply All Button */}
+                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200">
+                    <button
+                      type="button"
+                      onClick={handleApplyAll4DSteps}
+                      className="w-full sm:w-auto px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-xl border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] flex items-center justify-center gap-2 cursor-pointer transition-all"
+                    >
+                      <Sparkles className="w-4 h-4 text-slate-950" />
+                      <span>Apply & Fill All 4D Steps into Workspace</span>
+                    </button>
+
+                    {onNavigateTab && (
+                      <button
+                        type="button"
+                        onClick={() => onNavigateTab('journal')}
+                        className="text-xs font-bold text-indigo-700 hover:underline flex items-center gap-1"
+                      >
+                        <span>Need live coaching? Chat with RICHA</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="prose prose-sm max-w-none text-slate-800 dark:text-slate-100 leading-relaxed font-sans"
+                  dangerouslySetInnerHTML={{ __html: sanitizeHTML(result) }}
+                />
+              )
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-slate-400 text-center p-6 space-y-2">
                 <RefreshCw className="w-8 h-8 text-slate-400 stroke-2" />

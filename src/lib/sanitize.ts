@@ -23,22 +23,22 @@ export function sanitizeHTML(rawString: string | null | undefined): string {
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     // Headings
-    .replace(/^### (.*$)/gim, '<h3 class="text-base font-semibold text-slate-900 mt-3 mb-1">$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-slate-900 mt-4 mb-2">$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1 class="text-xl font-bold text-slate-900 mt-4 mb-2">$1</h1>')
+    .replace(/^### (.*$)/gim, '<h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 mt-3 mb-1">$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-slate-900 dark:text-slate-100 mt-4 mb-2">$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1 class="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4 mb-2">$1</h1>')
     // Horizontal rules
-    .replace(/^---$/gim, '<hr class="my-3 border-slate-200" />')
+    .replace(/^---$/gim, '<hr class="my-3 border-slate-200 dark:border-slate-700" />')
     // Bullet points
-    .replace(/^\s*[-•*]\s+(.*$)/gim, '<li class="ml-4 list-disc text-slate-700 my-0.5">$1</li>')
+    .replace(/^\s*[-•*]\s+(.*$)/gim, '<li class="ml-4 list-disc text-slate-700 dark:text-slate-200 my-0.5">$1</li>')
     // Code blocks / inline code
-    .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 bg-slate-100 text-indigo-700 rounded text-xs font-mono">$1</code>')
+    .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 border border-slate-200 dark:border-slate-700 rounded text-xs font-mono">$1</code>')
     // Links: convert markdown links [text](url) to <a> tags with security protocol validation
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, text, url) => {
       const cleanUrl = url.trim();
       if (/^(javascript|data|vbscript):/i.test(cleanUrl)) {
-        return `<span class="text-slate-700">${text}</span>`;
+        return `<span class="text-slate-700 dark:text-slate-200">${text}</span>`;
       }
-      return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 underline">${text}</a>`;
+      return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 dark:text-indigo-400 underline">${text}</a>`;
     })
     // Line breaks
     .replace(/\n/g, '<br />');

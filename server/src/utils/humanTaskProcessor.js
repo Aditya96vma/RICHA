@@ -14,6 +14,7 @@ export function extractHumanActivities(input) {
 
   const clean = input
     .replace(/\[USER_JOURNAL_DATA_START\]|\[USER_JOURNAL_DATA_END\]/gi, '')
+    .replace(/^\/(?:prioritize|triage|4d|plan|write|shield|bujo|dump)\s*/i, '')
     .replace(/TASK TO PLAN:\s*/i, '')
     .replace(/Task:\s*/i, '')
     .replace(/Deadline:\s*[^\n]*/gi, '')
@@ -24,15 +25,17 @@ export function extractHumanActivities(input) {
   const rawChunks = clean.split(/(?:\r?\n+|\s*;\s*|^\s*(?:\d+\.|\*|-|•)\s*)/m);
   const items = [];
 
+  const COMMAND_WORDS = new Set(['/prioritize', '/triage', '/4d', '/plan', '/write', 'prioritize', '4d', 'triage']);
+
   for (const chunk of rawChunks) {
     const trimmed = chunk.replace(/^(?:\d+\.|\*|-|•)\s*/, '').trim();
-    if (!trimmed) continue;
+    if (!trimmed || COMMAND_WORDS.has(trimmed.toLowerCase())) continue;
 
     // Split on commas or " and " if it contains distinct activities
     const subParts = trimmed.split(/,\s*|\s+and\s+(?=[a-z])/i);
     for (const sub of subParts) {
       const s = sub.trim().replace(/^and\s+/i, '').replace(/^[-,.*•]\s*/, '').trim();
-      if (s.length > 2) {
+      if (s.length > 2 && !COMMAND_WORDS.has(s.toLowerCase())) {
         items.push(s);
       }
     }
@@ -46,7 +49,7 @@ export function extractHumanActivities(input) {
     }
   }
 
-  return unique.length > 0 ? unique : (clean.length > 2 ? [clean] : []);
+  return unique.length > 0 ? unique : (clean.length > 2 && !COMMAND_WORDS.has(clean.toLowerCase()) ? [clean] : []);
 }
 
 /**
@@ -416,6 +419,31 @@ ${overallMVV}
  */
 export function generateHuman4DPrioritization(userInput) {
   const activities = extractHumanActivities(userInput);
+
+  if (activities.length === 0) {
+    return {
+      text: `### ⚡ Julie Morgenstern 4D Prioritization Matrix
+
+I'm ready to help you sort through your tasks, cut through the overwhelm, and free up cognitive bandwidth!
+
+**What's currently on your plate?**
+Please share the tasks, chores, or responsibilities weighing on you right now (you can paste a messy to-do list, bullet points, or just describe what you need to get done).
+
+I will categorize each item using the 4D framework:
+* ✂️ **Diminish**: Minimum viable version (10–15 min sprint, simplified meal, or 2 quick assignments)
+* ⏳ **Delay**: What can safely wait until tomorrow without consequences
+* 🗑️ **Delete**: Dropping perfectionist guilt and non-essential pressure
+* 🤝 **Delegate / Automate**: Ways to simplify or get support
+
+*Just reply with your list, or click **Load 4D Matrix Demo** in the 4D Review tab to see realistic examples!*
+
+---
+✅ Done this session: 4D Prioritizer ready to receive your task list
+🔜 Suggested next step: Type or paste the tasks or chores on your mind
+💾 Saved to: 4D Priority Matrix`
+    };
+  }
+
   const classified = activities.map(classifyActivity);
 
   let deleteItems = [];

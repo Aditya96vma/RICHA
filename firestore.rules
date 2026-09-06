@@ -3,6 +3,15 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // SECURITY DIRECTIVE 3: ZERO INSECURE DEFAULTS & OWNER-BOUND USER ISOLATION
     // Strict user-isolated path validation: Every subcollection document requires verified auth.uid match.
+    // Governs all 8 Agent Subcollections:
+    // 1. users/{userId}/journal
+    // 2. users/{userId}/prioritizer
+    // 3. users/{userId}/decision_matrices
+    // 4. users/{userId}/admin_routines
+    // 5. users/{userId}/wellbeing_sessions
+    // 6. users/{userId}/plans
+    // 7. users/{userId}/bullet_logs
+    // 8. users/{userId}/kanban & users/{userId}/habits
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
       
@@ -10,5 +19,11 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
+
+    // Default Deny: Disallow any access to unauthorized root paths or collections
+    match /{document=**} {
+      allow read, write: false;
+    }
   }
 }
+

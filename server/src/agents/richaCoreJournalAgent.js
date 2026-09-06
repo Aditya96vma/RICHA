@@ -6,6 +6,7 @@ import { generateContentWithFallback } from '../utils/geminiHelper.js';
 import { generateContentWithOllama } from '../utils/ollamaHelper.js';
 import { saveDocument } from '../utils/firestoreHelper.js';
 import { getUserMemory, extractAndUpdateMemory, formatMemoryContext } from '../utils/memoryManager.js';
+import { isGibberishOrKeysmash } from '../utils/gibberishDetector.js';
 
 const RICHA_JOURNALING_SYSTEM_PROMPT = `# RICHA — Core Journaling Companion & Memory System
 You are RICHA — an empathetic conversational journaling companion designed for neurodivergent individuals to externalize their executive function and reflect safely.
@@ -264,8 +265,13 @@ export async function richaCoreJournalAgent(userContent, uid, history = [], prov
     };
   }
 
-  // 6. Update Memory with this user turn
-  await extractAndUpdateMemory(uid, userContent);
+  // 6. Check if input is keysmash/gibberish
+  const isKeysmash = Boolean(options.isKeysmash || isGibberishOrKeysmash(userContent));
+
+  // Update Memory with this user turn (skip for keysmashes/gibberish to avoid noise)
+  if (!isKeysmash) {
+    await extractAndUpdateMemory(uid, userContent);
+  }
 
   // 7. Construct Contextual Gemini Prompt for normal chat turn
   let systemPromptWithMemory = `${RICHA_JOURNALING_SYSTEM_PROMPT}\n\n[USER LONG-TERM MEMORY CONTEXT]\n${memoryContext}`;
@@ -277,9 +283,19 @@ export async function richaCoreJournalAgent(userContent, uid, history = [], prov
 - Keep sentences short, warm, and natural.`;
   }
 
-  // Format conversation history into the user prompt for continuous dialogue awareness
+  // Format conversation history or keysmash context into prompt
   let conversationalPrompt = userContent;
-  if (Array.isArray(history) && history.length > 0) {
+  if (isKeysmash) {
+    conversationalPrompt = `[SPECIAL CONTEXT: The user sent a keyboard smash, gibberish, or wordless expression: "${userContent}".]
+This happens frequently when neurodivergent individuals face cognitive freeze, brain fog, sensory overload, frustration, or when words completely fail. Or they may simply be playfully testing your conversational intelligence.
+
+YOUR TASK AS RICHA:
+- Acknowledge this with warmth, smart perception, and zero judgment or robotic confusion.
+- Speak conversationally and perceptively: recognize that words might be failing them, their brain might feel like static, or their fingers just mashed the keys.
+- Do NOT scold them, do NOT ask "Did you mean to type that?", and do NOT give a generic error message or robotic options list.
+- Close with ONE gentle, low-pressure check-in (e.g., asking if they want to take a quiet breath, vent in rough fragments, or if their brain is feeling fried today).
+- KEEP IT CONCISE (2-3 short sentences), natural, warm, and speakable.`;
+  } else if (Array.isArray(history) && history.length > 0) {
     const recentHistory = history
       .slice(-6)
       .map(h => `${h.sender === 'user' ? 'User' : 'RICHA'}: ${h.text.split('---')[0].trim()}`)
@@ -598,6 +614,10 @@ function buildGroundedDeterministicEntry(userTurns, todayStr) {
  * High-empathy conversational fallback when offline or during transient network errors
  */
 function getConversationalFallback(userText) {
+  if (isGibberishOrKeysmash(userText)) {
+    return "Looks like words might be completely failing you right now, or maybe your brain is feeling full of static! That's totally okay — sometimes you just have to hit the keys. I'm right here with you. Would you like to take a quiet pause, or just unload in rough fragments?";
+  }
+
   const textLower = userText.toLowerCase();
 
   if (textLower.includes('exhausted') || textLower.includes('tired') || textLower.includes('drained')) {

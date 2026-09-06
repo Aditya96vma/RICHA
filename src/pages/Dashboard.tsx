@@ -13,6 +13,7 @@ import { Prioritizer4D } from '../components/Prioritizer/Prioritizer4D';
 import { HabitTracker } from '../components/Habits/HabitTracker';
 import { LifeAdminView } from '../components/Admin/LifeAdminView';
 import { WellbeingView } from '../components/Wellbeing/WellbeingView';
+import { DecisionMatrixView } from '../components/Decision/DecisionMatrixView';
 import { GlobalControls } from '../components/shared/GlobalControls';
 import { DemoShowcaseBanner } from '../components/shared/DemoShowcaseBanner';
 import { OverwhelmModal } from '../components/shared/OverwhelmModal';
@@ -23,6 +24,7 @@ import {
   MessageSquare,
   Zap,
   RefreshCw,
+  Scale,
   Layers,
   BookOpen,
   Flame,
@@ -45,6 +47,7 @@ export type DashboardTab =
   | 'chat'
   | 'planner'
   | 'prioritizer'
+  | 'decision'
   | 'kanban'
   | 'braindump'
   | 'habits'
@@ -99,6 +102,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const ACTION_TABS: { id: DashboardTab; label: string; icon: React.ElementType; desc: string }[] = [
     { id: 'planner', label: 'Micro-Planner', icon: Zap, desc: 'Sub-20m atomic execution steps' },
     { id: 'prioritizer', label: '4D Review', icon: RefreshCw, desc: 'Minimum Viable Versions (MVV)' },
+    { id: 'decision', label: 'Decision Matrix', icon: Scale, desc: 'MCDA & psychological dilemma advisor' },
     { id: 'kanban', label: 'Kanban Flow', icon: Layers, desc: '3-card WIP limit container' },
     { id: 'braindump', label: 'Bullet Log', icon: BookOpen, desc: 'Rapid logging & dump' }
   ];
@@ -362,6 +366,13 @@ export function Dashboard({ onLogout }: DashboardProps) {
             onClearHandoff={() => setHandoffData(null)}
           />
         )}
+        {activeTab === 'decision' && (
+          <DecisionMatrixView
+            onNavigateTab={(t, payload) => handleNavigateWithHandoff(t as DashboardTab, payload)}
+            handoffData={handoffData}
+            onClearHandoff={() => setHandoffData(null)}
+          />
+        )}
         {activeTab === 'kanban' && <KanbanBoard />}
         {activeTab === 'braindump' && (
           <BrainDump
@@ -409,7 +420,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 </h4>
                 <ul className="list-disc pl-4 space-y-1 text-slate-800">
                   <li><strong>Primary Cloud Persistence</strong>: Powered by Google Cloud Firestore. Every user has an isolated subcollection sandbox: <code className="bg-white px-1.5 py-0.5 rounded border border-indigo-200 text-[11px] font-mono text-indigo-900">users/{'{uid}'}/[collection]</code>.</li>
-                  <li><strong>Stored Collections</strong>: Isolated collections exist for <code className="font-mono">journal</code>, <code className="font-mono">tasks</code>, <code className="font-mono">kanban</code>, <code className="font-mono">habits</code>, <code className="font-mono">prioritizer</code>, <code className="font-mono">socratic_sessions</code>, and <code className="font-mono">synthesized_journal</code>.</li>
+                  <li><strong>Stored Collections</strong>: Isolated collections exist for <code className="font-mono">journal</code>, <code className="font-mono">tasks</code>, <code className="font-mono">kanban</code>, <code className="font-mono">habits</code>, <code className="font-mono">prioritizer</code>, <code className="font-mono">decision_matrices</code>, <code className="font-mono">socratic_sessions</code>, and <code className="font-mono">synthesized_journal</code>.</li>
                   <li><strong>Row-Level Security</strong>: Backend token verification enforces that users can only read, write, or delete their own documents.</li>
                   <li><strong>Local Resilience Fallback</strong>: If offline or running without cloud credentials, an in-memory document store + local draft auto-saver caches every keystroke so no thought is lost.</li>
                 </ul>

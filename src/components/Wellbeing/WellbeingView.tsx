@@ -234,7 +234,7 @@ export function WellbeingView() {
           <div className="flex-1 bg-slate-50 border-2 border-slate-900 rounded-xl p-5 overflow-y-auto min-h-[340px]">
             {assessment ? (
               <div
-                className="prose prose-sm max-w-none text-slate-800 leading-relaxed font-sans"
+                className="prose prose-sm max-w-none text-slate-800 dark:text-slate-100 leading-relaxed font-sans"
                 dangerouslySetInnerHTML={{ __html: sanitizeHTML(assessment) }}
               />
             ) : (

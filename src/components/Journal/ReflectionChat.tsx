@@ -45,11 +45,14 @@ import {
   Zap,
   ArrowRight,
   Trash2,
+  Scissors,
+  Users,
   Download,
   ShieldAlert,
   EyeOff,
   Sliders,
-  ChevronDown
+  ChevronDown,
+  Scale
 } from 'lucide-react';
 
 interface ChatMessage {
@@ -60,6 +63,12 @@ interface ChatMessage {
   intent?: string;
   timestamp: string;
   isJournalEntry?: boolean;
+  availableReroutes?: Array<{
+    id: string;
+    label: string;
+    intent: string;
+    desc: string;
+  }>;
   pendingMemories?: Array<{
     category: string;
     key: string;
@@ -110,7 +119,7 @@ interface UserMemory {
 }
 
 interface ReflectionChatProps {
-  onNavigateTab?: (tab: 'overview' | 'chat' | 'planner' | 'prioritizer' | 'kanban' | 'braindump' | 'habits' | 'admin' | 'wellbeing', payload?: any) => void;
+  onNavigateTab?: (tab: 'overview' | 'chat' | 'planner' | 'prioritizer' | 'decision' | 'kanban' | 'braindump' | 'habits' | 'admin' | 'wellbeing', payload?: any) => void;
   handoffData?: any;
 }
 
@@ -202,6 +211,7 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
   const [voiceMode, setVoiceMode] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const [showMemoryVault, setShowMemoryVault] = useState(false);
   const [showJournalHistory, setShowJournalHistory] = useState(false);
   const [showReminderSettings, setShowReminderSettings] = useState(false);
@@ -605,14 +615,49 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
   }, [messages, loading]);
 
   // Text-To-Speech helper
-  const speakText = (text: string) => {
+  const speakText = (text: string, msgId?: string) => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      if (speakingMsgId && (speakingMsgId === msgId || !msgId) && window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        setSpeakingMsgId(null);
+        return;
+      }
       window.speechSynthesis.cancel();
-      // Strip markdown for speaking
-      const plainText = text.replace(/[#*`_~]/g, '').replace(/---[\s\S]*$/, '').trim();
+
+      // Clean text for speaking: remove markdown, hashtags, URLs, and divider metadata
+      const plainText = text
+        .replace(/---[\s\S]*$/, '')
+        .replace(/[#*`_~]/g, '')
+        .replace(/https?:\/\/\S+/g, '')
+        .replace(/^[•\-]\s*/gm, '')
+        .replace(/✅|🔜|💾|✂️|⏳|🗑️|🤝|⚡|🛡️|⏱️|✨|💡/g, '')
+        .trim();
+
+      if (!plainText) return;
+
       const utterance = new SpeechSynthesisUtterance(plainText);
-      utterance.rate = 1.0;
+      utterance.rate = 0.98;
       utterance.pitch = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      const naturalVoice = voices.find(v => 
+        v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel') || v.name.includes('Premium'))
+      ) || voices.find(v => v.lang.startsWith('en'));
+
+      if (naturalVoice) {
+        utterance.voice = naturalVoice;
+      }
+
+      utterance.onstart = () => {
+        setSpeakingMsgId(msgId || 'active');
+      };
+      utterance.onend = () => {
+        setSpeakingMsgId(null);
+      };
+      utterance.onerror = () => {
+        setSpeakingMsgId(null);
+      };
+
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -637,11 +682,14 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
   };
 
   const handleSendMessage = async (textToSend?: string, overrideAgentParam?: string) => {
-    const text = textToSend || inputValue;
+    let text = textToSend || inputValue;
+    if (textToSend && textToSend.startsWith('/') && inputValue.trim()) {
+      text = `${textToSend} ${inputValue.trim()}`;
+    }
     if (!text.trim() || loading) return;
 
     const currentInput = text;
-    if (!textToSend) setInputValue('');
+    setInputValue('');
     setErrorInfo(null);
 
     const userMsgId = `user_${Date.now()}`;
@@ -689,8 +737,16 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
         if (isDemoMode) {
           const lower = currentInput.toLowerCase();
           let demoReply = `I'm right here with you. When cognitive overwhelm kicks in, our nervous system mistakes the task for an existential threat.\n\nLet's do a 120-second micro-step: what is the single atomic physical action you can take in the next 2 minutes?`;
+          let agentBadgeName = 'Agent 5 • Cognitive Mirror';
           let isJournal = false;
-          if (lower.includes('done') || lower.includes('finish') || lower.includes('sent') || lower.includes('did')) {
+
+          if (resolvedOverride === 'decision_matrix' || lower.startsWith('/decide') || lower.includes('decide') || lower.includes('torn between') || lower.includes('choose between')) {
+            agentBadgeName = 'Agent 8 • Decision Matrix & Advisor';
+            demoReply = `### ⚖️ Decision Matrix & Cognitive Evaluation (Demo Mode)\n\n**Dilemma**: "${currentInput.replace(/^\/decide\s*/i, '')}"\n\n#### 📊 Quantitative MCDA Breakdown\n* **Option A: Push Through / Maximize** — Energy: 2/5 | Reversibility: 3/5 | Regret: 3/5 → Weighted: **16.2 pts**\n* **Option B: Full Stop / Postpone** — Energy: 5/5 | Reversibility: 5/5 | Regret: 3/5 → Weighted: **20.8 pts**\n* **Option C: 15-Min Low-Stakes Trial (Satisficing)** — Energy: 4/5 | Reversibility: 5/5 | Regret: 5/5 → Weighted: **23.2 pts** (Recommended)\n\n#### 🧠 Cognitive Architecture Lens\n* 🚪 **Two-Way Door**: This is completely reversible (Jeff Bezos Type 2). Test for 15 minutes with zero penalty to stop.\n* 🔮 **10/10/10 Rule**: 10 minutes from now you feel unblocked; 10 months from now you remember healthy self-regulation.\n* 💡 **Satisficing Anchor**: Herbert Simon taught us to optimize for "good enough" rather than perfectionist exhaustion.\n\n🎯 **Minimum Viable Commitment (MVC)**: Execute a 15-minute low-stakes burst, then reassess with baseline intact.`;
+          } else if (resolvedOverride === 'prioritizer' || lower.startsWith('/prioritize')) {
+            agentBadgeName = 'Agent 2 • 4D Prioritizer';
+            demoReply = `### ⚡ 4D Executive Triage (Demo Mode)\n\n* 🗑️ **Delete**: Administrative perfectionism on non-critical items.\n* ⏳ **Delay**: Low-impact items moved to tomorrow's buffer.\n* ✂️ **Diminish**: Cut report length in half — provide bullet points instead of prose.\n* 👥 **Delegate**: Request peer review on sections 1-2.`;
+          } else if (lower.includes('done') || lower.includes('finish') || lower.includes('sent') || lower.includes('did')) {
             demoReply = `Terrific momentum! You conquered the initiation barrier.\n\n--- Journal Entry: Breaking Inertia ---\n* **Mood**: Relieved & Grounded\n* **Reflection**: Moving from avoidance to action proved that starting was the only real obstacle.\n\nArchived in your Memory Vault!`;
             isJournal = true;
           }
@@ -698,8 +754,8 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
             id: `ai_demo_${Date.now()}`,
             sender: 'assistant',
             text: demoReply,
-            agentName: 'Agent 5 • Cognitive Mirror',
-            intent: 'conversational_journal',
+            agentName: agentBadgeName,
+            intent: resolvedOverride === 'decision_matrix' ? 'decision_analysis' : 'conversational_journal',
             isJournalEntry: isJournal,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           };
@@ -740,10 +796,14 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
         isJournalEntry: isJournalDraft,
         pendingMemories: data.pendingMemories ? data.pendingMemories.map((m: any) => ({ ...m, status: 'pending' })) : undefined,
         orchestration: data.orchestration,
+        availableReroutes: data.availableReroutes || data.metadata?.availableReroutes,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
       setMessages((prev) => [...prev, aiMsg]);
+
+      // Do not permanently lock selectedAgentOverride so subsequent messages aren't trapped in 4D.
+      // The intelligent agent router naturally handles follow-up queries or other topics.
 
       // Synchronize to local storage for instant Bento Grid reflection updates
       setStoredJournal(uid, isDemoMode, {
@@ -760,7 +820,7 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
 
       // Speak if voice mode or TTS enabled
       if (voiceMode || ttsEnabled) {
-        speakText(data.reply);
+        speakText(data.reply, aiMsg.id);
       }
 
       // Clear locally preserved draft on successful transmission
@@ -871,11 +931,12 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
             <option value="companion">1. Companion</option>
             <option value="planner">2. Time-Box Planner</option>
             <option value="prioritizer">3. 4D Prioritizer</option>
-            <option value="admin_buffer">4. Admin & Buffer</option>
-            <option value="sensory_shield">5. Sensory Shield</option>
-            <option value="bullet_journal">6. Bullet Journal</option>
-            <option value="kanban_habits">7. Kanban & Habits</option>
-            <option value="reflection">8. Reflection & Diary</option>
+            <option value="decision_matrix">4. Decision Matrix (Psychology & Dilemmas)</option>
+            <option value="admin_buffer">5. Admin & Buffer</option>
+            <option value="sensory_shield">6. Sensory Shield</option>
+            <option value="bullet_journal">7. Bullet Journal</option>
+            <option value="kanban_habits">8. Kanban & Habits</option>
+            <option value="reflection">9. Reflection & Diary</option>
           </select>
 
           {/* Direct Synthesize Journal Entry Button */}
@@ -1041,13 +1102,18 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
               <div className={`max-w-2xl ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
                 {!isUser && (
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-slate-800">{msg.agentName || 'RICHA'}</span>
-                    <span className="text-[10px] text-slate-400">{msg.timestamp}</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{msg.agentName || 'RICHA'}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-400">{msg.timestamp}</span>
                     {/* Listen Button */}
                     <button
-                      onClick={() => speakText(msg.text)}
-                      title="Read out loud"
-                      className="text-slate-400 hover:text-indigo-600 p-0.5"
+                      type="button"
+                      onClick={() => speakText(msg.text, msg.id)}
+                      title={speakingMsgId === msg.id ? "Stop reading out loud" : "Read out loud"}
+                      className={`p-1 rounded transition-colors ${
+                        speakingMsgId === msg.id
+                          ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 ring-1 ring-indigo-400/40 animate-pulse'
+                          : 'text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
                     >
                       <Volume2 className="w-3.5 h-3.5" />
                     </button>
@@ -1056,45 +1122,45 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
 
                 {/* Bubble styling: Special card for journal drafts */}
                 {isEntry ? (
-                  <div className="bg-amber-50/90 border-2 border-amber-300 rounded-2xl p-5 shadow-xs text-slate-900 space-y-3">
-                    <div className="flex items-center justify-between border-b border-amber-200 pb-2">
+                  <div className="bg-amber-50/90 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700/60 rounded-2xl p-5 shadow-xs text-slate-900 dark:text-amber-50 space-y-3">
+                    <div className="flex items-center justify-between border-b border-amber-200 dark:border-amber-800/60 pb-2">
                       <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-amber-700" />
-                        <span className="text-xs font-extrabold uppercase tracking-wider text-amber-900">
+                        <FileText className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-200">
                           Auto-Generated Journal Entry (First Person)
                         </span>
                       </div>
-                      <span className="text-[10px] font-bold text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-md">
+                      <span className="text-[10px] font-bold text-amber-800 dark:text-amber-200 bg-amber-200/70 dark:bg-amber-900/60 px-2 py-0.5 rounded-md">
                         Draft Ready
                       </span>
                     </div>
 
                     <div
-                      className="font-serif text-sm leading-relaxed text-slate-800 whitespace-pre-wrap"
+                      className="font-serif text-sm leading-relaxed text-slate-800 dark:text-slate-100 whitespace-pre-wrap"
                       dangerouslySetInnerHTML={{ __html: sanitizeHTML(msg.text) }}
                     />
 
                     {/* Quick tone adjustment / save pills */}
-                    <div className="pt-2 border-t border-amber-200 flex flex-wrap items-center gap-2">
-                      <span className="text-[11px] font-bold text-amber-900">Refine:</span>
+                    <div className="pt-2 border-t border-amber-200 dark:border-amber-800/60 flex flex-wrap items-center gap-2">
+                      <span className="text-[11px] font-bold text-amber-900 dark:text-amber-200">Refine:</span>
                       <button
                         type="button"
                         onClick={() => handleSendMessage('Can you make it sound less formal and more natural?')}
-                        className="px-2.5 py-1 bg-white hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-lg border border-amber-300 shadow-2xs"
+                        className="px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-amber-900 dark:text-amber-200 text-xs font-bold rounded-lg border border-amber-300 dark:border-amber-700/60 shadow-2xs transition-colors"
                       >
                         Make less formal
                       </button>
                       <button
                         type="button"
                         onClick={() => handleSendMessage('Can you make it shorter and more concise?')}
-                        className="px-2.5 py-1 bg-white hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-lg border border-amber-300 shadow-2xs"
+                        className="px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-amber-900 dark:text-amber-200 text-xs font-bold rounded-lg border border-amber-300 dark:border-amber-700/60 shadow-2xs transition-colors"
                       >
                         Make shorter
                       </button>
                       <button
                         type="button"
                         onClick={() => handleSendMessage('Can you deepen the emotional reflection?')}
-                        className="px-2.5 py-1 bg-white hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-lg border border-amber-300 shadow-2xs"
+                        className="px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-amber-900 dark:text-amber-200 text-xs font-bold rounded-lg border border-amber-300 dark:border-amber-700/60 shadow-2xs transition-colors"
                       >
                         Add deeper reflection
                       </button>
@@ -1119,7 +1185,7 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                     className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                       isUser
                         ? 'bg-indigo-600 text-white rounded-tr-xs shadow-xs'
-                        : 'bg-slate-50 border border-slate-200/80 text-slate-800 rounded-tl-xs shadow-2xs'
+                        : 'bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-tl-xs shadow-2xs'
                     }`}
                   >
                     {isUser ? (
@@ -1127,22 +1193,22 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                     ) : (
                       <div>
                         <div
-                          className="prose prose-sm max-w-none text-slate-800 leading-relaxed font-sans"
+                          className="prose prose-sm max-w-none dark:prose-invert text-slate-800 dark:text-slate-100 leading-relaxed font-sans"
                           dangerouslySetInnerHTML={{ __html: sanitizeHTML(msg.text) }}
                         />
 
                         {/* Interlinked Agent Suggestions when overwhelmed, task heavy, or planning is relevant */}
                         {onNavigateTab && (
-                          <div className="mt-3 pt-2.5 border-t border-slate-200/80 flex flex-wrap items-center gap-1.5">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suggested Tools:</span>
+                          <div className="mt-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-700/80 flex flex-wrap items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Suggested Tools:</span>
                             
                             {(msg.text.toLowerCase().includes('wellbeing') || msg.text.toLowerCase().includes('overwhelm') || msg.text.toLowerCase().includes('exhaust') || msg.text.toLowerCase().includes('drain') || msg.text.toLowerCase().includes('sensory')) && (
                               <button
                                 type="button"
                                 onClick={() => onNavigateTab('wellbeing')}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-[11px] shadow-2xs transition-colors"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 font-bold text-[11px] shadow-2xs transition-colors"
                               >
-                                <Shield className="w-3 h-3 text-emerald-600" />
+                                <Shield className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                 <span>Sensory Wellbeing</span>
                                 <ArrowRight className="w-2.5 h-2.5 opacity-60" />
                               </button>
@@ -1152,9 +1218,9 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                               <button
                                 type="button"
                                 onClick={() => onNavigateTab('prioritizer')}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-[11px] shadow-2xs transition-colors"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 font-bold text-[11px] shadow-2xs transition-colors"
                               >
-                                <Zap className="w-3 h-3 text-amber-600" />
+                                <Zap className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                                 <span>4D Prioritizer</span>
                                 <ArrowRight className="w-2.5 h-2.5 opacity-60" />
                               </button>
@@ -1164,9 +1230,9 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                               <button
                                 type="button"
                                 onClick={() => onNavigateTab('planner')}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-300 text-indigo-900 font-bold text-[11px] shadow-2xs transition-colors"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-300 dark:border-indigo-700 text-indigo-900 dark:text-indigo-200 font-bold text-[11px] shadow-2xs transition-colors"
                               >
-                                <Clock className="w-3 h-3 text-indigo-600" />
+                                <Clock className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                                 <span>Time-Box Planner</span>
                                 <ArrowRight className="w-2.5 h-2.5 opacity-60" />
                               </button>
@@ -1176,9 +1242,9 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                               <button
                                 type="button"
                                 onClick={() => onNavigateTab('kanban')}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-900 font-bold text-[11px] shadow-2xs transition-colors"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-200 font-bold text-[11px] shadow-2xs transition-colors"
                               >
-                                <Layers className="w-3 h-3 text-blue-600" />
+                                <Layers className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                                 <span>Kanban Flow</span>
                                 <ArrowRight className="w-2.5 h-2.5 opacity-60" />
                               </button>
@@ -1187,7 +1253,7 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                             <button
                               type="button"
                               onClick={() => onNavigateTab('overview')}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-medium text-[10px] ml-auto"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-medium text-[10px] ml-auto"
                             >
                               <span>Bento Hub</span>
                               <ArrowRight className="w-2.5 h-2.5 opacity-60" />
@@ -1197,8 +1263,8 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
 
                         {/* Agent Handoff Notice (Dimension 2: Explicit Hand-off) */}
                         {msg.orchestration?.handoff && (
-                          <div className="mt-2.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-2 text-xs text-blue-900 font-medium">
-                            <ArrowRight className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <div className="mt-2.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 rounded-xl flex items-center gap-2 text-xs text-blue-900 dark:text-blue-200 font-medium">
+                            <ArrowRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                             <span>
                               <strong>Explicit Handoff:</strong> Handed off from <em>{msg.orchestration.handoff.from}</em> to <em>{msg.orchestration.handoff.to}</em> ({msg.orchestration.handoff.reason})
                             </span>
@@ -1207,8 +1273,8 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
 
                         {/* Low-Confidence Disambiguation (Dimension 1) */}
                         {msg.orchestration?.isLowConfidence && msg.orchestration.clarificationOptions && msg.orchestration.clarificationOptions.length > 0 && (
-                          <div className="mt-3 p-3 bg-indigo-50 border-2 border-indigo-200 rounded-xl space-y-2">
-                            <p className="text-xs font-extrabold text-indigo-950">
+                          <div className="mt-3 p-3 bg-indigo-50 dark:bg-indigo-950/60 border-2 border-indigo-200 dark:border-indigo-800 rounded-xl space-y-2">
+                            <p className="text-xs font-extrabold text-indigo-950 dark:text-indigo-200">
                               To best match your cognitive energy right now, which path feels easiest?
                             </p>
                             <div className="flex flex-wrap gap-2">
@@ -1217,7 +1283,7 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                                   key={opt.agentId}
                                   type="button"
                                   onClick={() => handleSendMessage(opt.prompt, opt.agentId)}
-                                  className="px-3 py-1.5 bg-white hover:bg-indigo-600 hover:text-white text-indigo-900 text-xs font-bold rounded-lg border border-indigo-300 shadow-2xs transition-all"
+                                  className="px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 text-indigo-900 dark:text-indigo-100 text-xs font-bold rounded-lg border border-indigo-300 dark:border-slate-600 shadow-2xs transition-all"
                                 >
                                   {opt.label}
                                 </button>
@@ -1226,16 +1292,155 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                           </div>
                         )}
 
+                        {/* 4D Matrix Step-by-Step Action & Filling Assistant */}
+                        {(msg.agentName?.toLowerCase().includes('prioritizer') || 
+                          msg.intent === 'review_request' || 
+                          msg.text.includes('4D Prioritization') || 
+                          msg.text.includes('4D Action Breakdown') ||
+                          (msg.text.toLowerCase().includes('diminish') && msg.text.toLowerCase().includes('delete') && msg.text.toLowerCase().includes('delay'))) && (
+                          <div className="mt-3 p-3.5 bg-gradient-to-br from-amber-50 to-orange-50/40 dark:from-amber-950/40 dark:to-slate-800 border-2 border-amber-400 dark:border-amber-700/80 rounded-2xl shadow-xs space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                <span className="text-xs font-black text-amber-950 dark:text-amber-200 uppercase tracking-wide">
+                                  4D Step-by-Step Filling Assistant
+                                </span>
+                              </div>
+                              {onNavigateTab && (
+                                <button
+                                  type="button"
+                                  onClick={() => onNavigateTab('prioritizer')}
+                                  className="text-[11px] font-bold text-amber-800 dark:text-amber-300 hover:underline flex items-center gap-1"
+                                >
+                                  <span>Open 4D Matrix Board</span>
+                                  <ArrowRight className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+
+                            <p className="text-xs text-amber-950/90 dark:text-amber-200/90 leading-relaxed font-medium">
+                              Here is your 4D overview. Now let's help you fill and execute each step without executive overload:
+                            </p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                              <button
+                                type="button"
+                                onClick={() => handleSendMessage('Help me with Step 1 (Delete): Guide me on what tasks I can safely cross off right now with zero guilt.')}
+                                className="p-2.5 bg-white dark:bg-slate-800/90 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-amber-200 dark:border-slate-700 rounded-xl text-left transition-all group shadow-2xs"
+                              >
+                                <div className="font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Step 1: Fill Deletions</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                                  Give yourself permission to drop non-essential pressure with zero guilt.
+                                </p>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleSendMessage('Help me with Step 2 (Delay): What are realistic dates or buffer blocks to schedule my delayed tasks into my calendar?')}
+                                className="p-2.5 bg-white dark:bg-slate-800/90 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-amber-200 dark:border-slate-700 rounded-xl text-left transition-all group shadow-2xs"
+                              >
+                                <div className="font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>Step 2: Schedule Delays</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                                  Park secondary tasks safely in your Backlog or weekend buffer.
+                                </p>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleSendMessage('Help me with Step 3 (Diminish): Break down my core focus task into its 10-minute minimum viable version with the Planner.')}
+                                className="p-2.5 bg-white dark:bg-slate-800/90 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-amber-200 dark:border-slate-700 rounded-xl text-left transition-all group shadow-2xs"
+                              >
+                                <div className="font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
+                                  <Scissors className="w-3.5 h-3.5" />
+                                  <span>Step 3: Diminish (MVV)</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                                  Shrink the main task to a 10-min atomic sprint or 2 key steps.
+                                </p>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleSendMessage('Help me with Step 4 (Delegate / Automate): Help me write a 1-sentence draft to delegate or ask for help with this task.')}
+                                className="p-2.5 bg-white dark:bg-slate-800/90 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-amber-200 dark:border-slate-700 rounded-xl text-left transition-all group shadow-2xs"
+                              >
+                                <div className="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
+                                  <Users className="w-3.5 h-3.5" />
+                                  <span>Step 4: Delegate / Automate</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                                  Simplify, draft a quick handoff ask, or use automation.
+                                </p>
+                              </button>
+                            </div>
+
+                            <div className="pt-2 border-t border-amber-200 dark:border-amber-700/60 flex items-center justify-between flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleSendMessage('Guide me step-by-step through filling all 4 steps of my matrix.')}
+                                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded-lg shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                              >
+                                <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+                                <span>Guide Me Through Filling Each Step</span>
+                              </button>
+
+                              {onNavigateTab && (
+                                <button
+                                  type="button"
+                                  onClick={() => onNavigateTab('prioritizer')}
+                                  className="px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-600 shadow-2xs flex items-center gap-1"
+                                >
+                                  <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                                  <span>Interactive 4D Board</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Decision Matrix Interactive Assistant Card */}
+                        {(msg.agentName === 'Decision Matrix Agent' || msg.intent === 'decision_matrix' || (msg.text && (msg.text.includes('Decision Matrix') || msg.text.includes('Multi-Criteria Decision Analysis') || msg.text.includes('Satisficing') || msg.text.includes('W.R.A.P.')))) && (
+                          <div className="mt-3 p-3.5 bg-indigo-50/90 dark:bg-indigo-950/40 border-2 border-indigo-200 dark:border-indigo-800/80 rounded-2xl shadow-2xs space-y-2">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div className="flex items-center gap-1.5">
+                                <Scale className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                <span className="text-xs font-black text-indigo-950 dark:text-indigo-200 uppercase tracking-wide">
+                                  Interactive Decision Matrix Ready
+                                </span>
+                              </div>
+                              {onNavigateTab && (
+                                <button
+                                  type="button"
+                                  onClick={() => onNavigateTab('decision')}
+                                  className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-lg shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                                >
+                                  <span>Open Matrix Workspace</span>
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-indigo-900/85 dark:text-indigo-300 font-medium leading-relaxed">
+                              Explore Herbert Simon's satisficing thresholds, Chip & Dan Heath's 10/10/10 perspective, Kahneman pre-mortem risk assessment, and dynamic criteria weights in your interactive board.
+                            </p>
+                          </div>
+                        )}
+
                         {/* Memory Receipts (Dimension 5 & 1: Trust & Explicit Consent) */}
                         {msg.pendingMemories && msg.pendingMemories.length > 0 && (
-                          <div className="mt-3 p-3 bg-amber-50/90 border-2 border-amber-300 rounded-2xl shadow-2xs space-y-2">
+                          <div className="mt-3 p-3 bg-amber-50/90 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700/60 rounded-2xl shadow-2xs space-y-2">
                             <div className="flex items-center gap-1.5">
-                              <Brain className="w-4 h-4 text-amber-700" />
-                              <span className="text-xs font-black text-amber-950 uppercase tracking-wide">
+                              <Brain className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                              <span className="text-xs font-black text-amber-950 dark:text-amber-200 uppercase tracking-wide">
                                 Memory Receipt • Pending Confirmation
                               </span>
                             </div>
-                            <p className="text-[11px] text-amber-900/80 font-medium">
+                            <p className="text-[11px] text-amber-900/80 dark:text-amber-300/80 font-medium">
                               RICHA identified these facts. Would you like them stored in your Memory Vault?
                             </p>
 
@@ -1243,20 +1448,20 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                               {msg.pendingMemories.map((mem, idx) => (
                                 <div
                                   key={idx}
-                                  className="p-2 bg-white rounded-xl border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs text-xs"
+                                  className="p-2 bg-white dark:bg-slate-800 rounded-xl border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs text-xs"
                                 >
                                   <div className="min-w-0">
-                                    <span className="inline-block px-1.5 py-0.5 text-[9px] font-black uppercase rounded-md bg-amber-100 text-amber-900 border border-amber-300 mr-1.5">
+                                    <span className="inline-block px-1.5 py-0.5 text-[9px] font-black uppercase rounded-md bg-amber-100 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 mr-1.5">
                                       {mem.category}
                                     </span>
-                                    <span className="font-bold text-slate-900">{mem.key}: </span>
-                                    <span className="text-slate-700 font-medium">{mem.value}</span>
+                                    <span className="font-bold text-slate-900 dark:text-slate-100">{mem.key}: </span>
+                                    <span className="text-slate-700 dark:text-slate-300 font-medium">{mem.value}</span>
                                   </div>
 
                                   <div className="flex items-center gap-1.5 shrink-0">
                                     {mem.status === 'confirmed' ? (
-                                      <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
-                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                                         <span>Saved in Vault</span>
                                       </span>
                                     ) : mem.status === 'rejected' ? (
@@ -1274,7 +1479,7 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                                         <button
                                           type="button"
                                           onClick={() => handleRejectMemory(msg.id, idx)}
-                                          className="px-2 py-1 text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer"
+                                          className="px-2 py-1 text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg cursor-pointer"
                                         >
                                           Dismiss
                                         </button>
@@ -1288,8 +1493,8 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                         )}
 
                         {/* Agent Re-route Controls (Dimension 1) */}
-                        <div className="mt-3 pt-2 border-t border-slate-200/80 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-                          <span className="text-[10px] uppercase font-bold text-slate-400">Re-route:</span>
+                        <div className="mt-3 pt-2 border-t border-slate-200/80 dark:border-slate-700/80 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-400">Re-route:</span>
                           {[
                             { id: 'planner', label: 'Planner' },
                             { id: 'prioritizer', label: 'Prioritizer' },
@@ -1304,7 +1509,7 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                                 const prevUserMsg = [...messages].reverse().find(m => m.sender === 'user');
                                 handleSendMessage(prevUserMsg ? `Please process this with ${ag.label}: ${prevUserMsg.text}` : `Help me with ${ag.label}`, ag.id);
                               }}
-                              className="px-2 py-0.5 rounded-md bg-white hover:bg-indigo-50 hover:text-indigo-900 border border-slate-200 text-[10px] font-bold text-slate-600 transition-colors"
+                              className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-900 dark:hover:text-indigo-200 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300 transition-colors"
                             >
                               {ag.label}
                             </button>
@@ -1324,11 +1529,11 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
             <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 flex-shrink-0">
               <Sparkles className="w-4 h-4 animate-spin" />
             </div>
-            <div className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl rounded-tl-xs text-xs text-slate-600 flex items-center gap-2 shadow-2xs">
+            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-2xl rounded-tl-xs text-xs text-slate-600 dark:text-slate-200 flex items-center gap-2 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce"></span>
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]"></span>
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.4s]"></span>
-              <span className="font-medium text-slate-500 ml-1">RICHA is listening & reflecting...</span>
+              <span className="font-medium text-slate-500 dark:text-slate-300 ml-1">RICHA is listening & reflecting...</span>
             </div>
           </div>
         )}
@@ -1337,11 +1542,11 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
       </div>
 
       {/* Suggested Quick Prompts & Auto-Write Bar */}
-      <div className="px-6 py-2.5 bg-slate-100 border-t-2 border-slate-900 flex items-center gap-2 overflow-x-auto no-scrollbar text-xs">
+      <div className="px-6 py-2.5 bg-slate-100 dark:bg-slate-800/90 border-t-2 border-slate-900 dark:border-slate-700 flex items-center gap-2 overflow-x-auto no-scrollbar text-xs">
         <button
           type="button"
           onClick={() => handleSendMessage('/shield', 'sensory_shield')}
-          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-lg border-2 border-slate-900 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5"
+          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-lg border-2 border-slate-900 dark:border-slate-700 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5"
         >
           <Shield className="w-3.5 h-3.5" />
           <span>🛡️ Sensory Shield (/shield)</span>
@@ -1349,49 +1554,172 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
         <button
           type="button"
           onClick={() => handleSendMessage('/write')}
-          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-lg border-2 border-slate-900 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5"
+          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-lg border-2 border-slate-900 dark:border-slate-700 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5"
         >
           <Edit3 className="w-3.5 h-3.5" />
           <span>Write My Journal (/write)</span>
         </button>
         <button
           type="button"
-          onClick={() => handleSendMessage('/plan', 'planner')}
-          className="px-3 py-1.5 bg-white hover:bg-slate-50 text-indigo-900 font-bold rounded-lg border-2 border-slate-900 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1"
+          onClick={() => {
+            if (inputValue.trim()) {
+              handleSendMessage(`/plan ${inputValue.trim()}`, 'planner');
+            } else {
+              setInputValue('/plan ');
+              setSelectedAgentOverride('planner');
+              setTimeout(() => {
+                const el = document.getElementById('reflection-chat-input') as HTMLTextAreaElement;
+                if (el) {
+                  el.focus();
+                  el.setSelectionRange(el.value.length, el.value.length);
+                }
+              }, 50);
+            }
+          }}
+          className={`px-3 py-1.5 font-bold rounded-lg border-2 border-slate-900 dark:border-slate-600 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1 cursor-pointer transition-all ${
+            selectedAgentOverride === 'planner'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-indigo-900 dark:text-indigo-200'
+          }`}
+          title="Break down your day or a stuck task with the Planner Agent"
         >
-          <Clock className="w-3 h-3 text-indigo-600" />
+          <Clock className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
           <span>Plan My Day (/plan)</span>
         </button>
         <button
           type="button"
-          onClick={() => handleSendMessage('/prioritize', 'prioritizer')}
-          className="px-3 py-1.5 bg-white hover:bg-slate-50 text-amber-900 font-bold rounded-lg border-2 border-slate-900 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1"
+          onClick={() => {
+            if (inputValue.trim()) {
+              handleSendMessage(`/prioritize ${inputValue.trim()}`, 'prioritizer');
+            } else {
+              setInputValue('/prioritize ');
+              setSelectedAgentOverride('prioritizer');
+              setTimeout(() => {
+                const el = document.getElementById('reflection-chat-input') as HTMLTextAreaElement;
+                if (el) {
+                  el.focus();
+                  el.setSelectionRange(el.value.length, el.value.length);
+                }
+              }, 50);
+            }
+          }}
+          className={`px-3 py-1.5 font-bold rounded-lg border-2 border-slate-900 dark:border-slate-600 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1 cursor-pointer transition-all ${
+            selectedAgentOverride === 'prioritizer'
+              ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-500'
+              : 'bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-950 dark:text-amber-100'
+          }`}
+          title="Triage task list using Julie Morgenstern's 4D framework (Delete, Delay, Diminish, Delegate)"
         >
-          <Zap className="w-3 h-3 text-amber-600" />
+          <Zap className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
           <span>4D Prioritize (/prioritize)</span>
         </button>
         <button
           type="button"
+          onClick={() => {
+            if (selectedAgentOverride === 'decision_matrix') {
+              setSelectedAgentOverride(null);
+            } else {
+              setSelectedAgentOverride('decision_matrix');
+              setInputValue('Help me decide between: ');
+              setTimeout(() => {
+                const el = document.getElementById('reflection-chat-input') as HTMLTextAreaElement;
+                if (el) {
+                  el.focus();
+                  el.setSelectionRange(el.value.length, el.value.length);
+                }
+              }, 50);
+            }
+          }}
+          className={`px-3 py-1.5 font-bold rounded-lg border-2 border-slate-900 dark:border-slate-600 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5 cursor-pointer transition-all ${
+            selectedAgentOverride === 'decision_matrix'
+              ? 'bg-indigo-600 text-white ring-2 ring-indigo-500'
+              : 'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-950 dark:text-indigo-100'
+          }`}
+          title="Evaluate tough choices with Herbert Simon Satisficing, Suzy Welch 10/10/10, and Kahneman Pre-Mortem"
+        >
+          <Scale className="w-3.5 h-3.5 text-indigo-700 dark:text-indigo-400" />
+          <span>Decision Matrix (/decide)</span>
+        </button>
+        <button
+          type="button"
           onClick={() => handleSendMessage("Can you remind me what I've shared with you about my life so far?")}
-          className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-lg border-2 border-slate-900 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
+          className="px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold rounded-lg border-2 border-slate-900 dark:border-slate-600 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
         >
           Remind me what you remember
         </button>
         <button
           type="button"
           onClick={() => handleSendMessage("I had a fight with my sister today")}
-          className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-lg border-2 border-slate-900 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
+          className="px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold rounded-lg border-2 border-slate-900 dark:border-slate-600 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
         >
           Talk through conflict
         </button>
         <button
           type="button"
           onClick={() => handleSendMessage("My boss keeps piling on more work and I can't say no")}
-          className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-lg border-2 border-slate-900 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
+          className="px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold rounded-lg border-2 border-slate-900 dark:border-slate-600 text-xs whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
         >
           Work boundaries
         </button>
       </div>
+
+      {/* Active Agent Mode Banner */}
+      {selectedAgentOverride && (
+        <div className="px-6 py-2 bg-amber-50 dark:bg-amber-950/60 border-t-2 border-slate-900 dark:border-slate-700 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold text-amber-950 dark:text-amber-100">
+            <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>
+              {selectedAgentOverride === 'prioritizer' && '⚡ 4D Prioritizer Active: Paste your to-do list or tasks below to triage into Delete, Delay, Diminish, Delegate'}
+              {selectedAgentOverride === 'decision_matrix' && '⚖️ Decision Matrix Active: Enter your dilemma or options to evaluate with MCDA & cognitive psychology'}
+              {selectedAgentOverride === 'planner' && '⏱️ Planner Agent Active: Enter your project or tasks to break down into micro-steps'}
+              {selectedAgentOverride === 'sensory_shield' && '🛡️ Sensory Shield Active: Enter your current state for soothing, sensory reset'}
+              {selectedAgentOverride !== 'prioritizer' && selectedAgentOverride !== 'decision_matrix' && selectedAgentOverride !== 'planner' && selectedAgentOverride !== 'sensory_shield' && `Agent Override: ${selectedAgentOverride}`}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSelectedAgentOverride(null)}
+            className="text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 shadow-2xs hover:bg-slate-100 transition-colors shrink-0 ml-2"
+            title="Clear override (Return to Auto-Route)"
+          >
+            ✕ Auto-Route
+          </button>
+        </div>
+      )}
+
+      {/* Proactive Indecision Dilemma Detection */}
+      {/(can't decide|cannot decide|trouble deciding|problem deciding|having problem deciding|having a problem deciding|hard to choose|stuck between|torn between|help me decide|should i .* or .*)/i.test(inputValue) && (
+        <div className="px-6 py-2.5 bg-amber-50 dark:bg-[#201509] border-t-2 border-amber-300 dark:border-amber-700/80 flex items-center justify-between gap-3 text-xs flex-wrap">
+          <div className="flex items-center gap-2 min-w-0">
+            <Scale className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="text-amber-950 dark:text-amber-200 font-bold">
+              <strong>Decision Dilemma Detected:</strong> The <strong>Decision Matrix Agent</strong> can unpack this with Simon's Satisficing & Heath W.R.A.P. framework.
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedAgentOverride('decision_matrix');
+                handleSendMessage();
+              }}
+              className="px-2.5 py-1 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs shadow-2xs transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <Sparkles className="w-3 h-3 fill-slate-950" />
+              <span>Evaluate Options</span>
+            </button>
+            {onNavigateTab && (
+              <button
+                type="button"
+                onClick={() => onNavigateTab('decision', { taskText: inputValue })}
+                className="px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold rounded-lg border border-slate-300 dark:border-slate-600 text-xs shadow-2xs transition-colors cursor-pointer"
+              >
+                Open Matrix Workspace →
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Input Form */}
       <form
@@ -1399,7 +1727,7 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
           e.preventDefault();
           handleSendMessage();
         }}
-        className="p-4 border-t-2 border-slate-900 bg-white flex items-end gap-3"
+        className="p-4 border-t-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-[#111a2e] flex items-end gap-3"
       >
         <div className="flex-1 relative">
           <textarea
@@ -1417,8 +1745,16 @@ export function ReflectionChat({ onNavigateTab, handoffData }: ReflectionChatPro
                 handleSendMessage();
               }
             }}
-            placeholder="Tell RICHA what's happening or how you feel... Type /write anytime to generate your entry."
-            className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-900 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white resize-none transition-all placeholder:text-slate-400 font-medium text-slate-900"
+            placeholder={
+              selectedAgentOverride === 'prioritizer'
+                ? 'Enter or paste your to-do list to triage (e.g. 1. Clean desk 2. Finish report 3. Laundry)...'
+                : selectedAgentOverride === 'decision_matrix'
+                ? 'What decision are you torn between? (e.g. Should I accept offer A or stay at B?)...'
+                : selectedAgentOverride === 'planner'
+                ? 'What project or task would you like to break down into micro-steps?...'
+                : "Tell RICHA what's happening or how you feel... Type /decide, /prioritize, or /plan anytime."
+            }
+            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#0c1424] border-2 border-slate-900 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white dark:focus:bg-[#0c1424] resize-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium text-slate-900 dark:text-slate-100"
           />
         </div>
 

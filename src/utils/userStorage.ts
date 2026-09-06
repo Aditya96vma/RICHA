@@ -292,3 +292,25 @@ export function setStoredJournal(uid: string | null | undefined, isDemoMode: boo
   }
   emitDataUpdated('journal');
 }
+
+/**
+ * Retrieves stored decision matrix state
+ */
+export function getStoredDecision(uid: string | null | undefined, isDemoMode: boolean): { dilemma?: string; options?: any[]; analysis?: string; mvc?: string } | null {
+  try {
+    const key = isDemoMode ? 'decision_matrix_demo' : 'decision_matrix';
+    const raw = getUserStorageItem(uid, key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Saves decision matrix state
+ */
+export function setStoredDecision(uid: string | null | undefined, isDemoMode: boolean, data: { dilemma?: string; options?: any[]; analysis?: string; mvc?: string }): void {
+  const key = isDemoMode ? 'decision_matrix_demo' : 'decision_matrix';
+  setUserStorageItem(uid, key, JSON.stringify(data));
+  emitDataUpdated('decision');
+}

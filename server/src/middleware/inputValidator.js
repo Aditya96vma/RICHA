@@ -8,48 +8,61 @@ import { z } from 'zod';
  * Chat message schema for multi-agent interaction
  */
 export const chatMessageSchema = z.object({
-  content: z.string().max(8000, 'Content exceeds 8000 characters limit').optional(),
-  message: z.string().max(8000, 'Message exceeds 8000 characters limit').optional(),
-  sessionId: z.string().max(128).optional().default('default-session'),
-  contextHint: z.string().max(64).optional(),
+  content: z.string().max(16000, 'Content exceeds character limit').optional(),
+  message: z.string().max(16000, 'Message exceeds character limit').optional(),
+  sessionId: z.string().max(256).nullable().optional().default('default-session'),
+  contextHint: z.string().max(128).nullable().optional(),
   voiceMode: z.boolean().optional().default(false),
-  overrideAgent: z.string().max(64).optional(),
-  verbosity: z.enum(['low', 'balanced', 'deep']).optional().default('balanced'),
+  overrideAgent: z.string().max(128).nullable().optional(),
+  verbosity: z.enum(['low', 'balanced', 'deep', 'micro', 'standard']).optional().default('standard'),
   incognito: z.boolean().optional().default(false),
   location: z.object({
-    placeName: z.string().max(100).optional(),
+    placeName: z.string().max(200).optional(),
     latitude: z.number().min(-90).max(90).optional(),
     longitude: z.number().min(-180).max(180).optional(),
-    city: z.string().max(100).optional()
-  }).optional(),
+    lat: z.number().min(-90).max(90).optional(),
+    long: z.number().min(-180).max(180).optional(),
+    city: z.string().max(100).optional(),
+    country: z.string().max(100).optional()
+  }).nullable().optional(),
   history: z.array(z.union([
     z.object({
-      sender: z.string().max(32),
-      text: z.string().max(8000)
-    }),
+      sender: z.string().max(128).optional(),
+      text: z.string().max(50000).optional()
+    }).transform(m => ({ sender: m.sender || 'user', text: m.text || '' })),
     z.object({
-      role: z.string().max(32),
-      content: z.string().max(8000)
-    }).transform(m => ({ sender: m.role, text: m.content })),
+      role: z.string().max(128).optional(),
+      content: z.string().max(50000).optional()
+    }).transform(m => ({ sender: m.role || 'user', text: m.content || '' })),
     z.object({
-      role: z.string().max(32),
-      text: z.string().max(8000)
-    }).transform(m => ({ sender: m.role, text: m.text })),
+      role: z.string().max(128).optional(),
+      text: z.string().max(50000).optional()
+    }).transform(m => ({ sender: m.role || 'user', text: m.text || '' })),
     z.object({
-      sender: z.string().max(32),
-      content: z.string().max(8000)
-    }).transform(m => ({ sender: m.sender, text: m.content }))
+      sender: z.string().max(128).optional(),
+      content: z.string().max(50000).optional()
+    }).transform(m => ({ sender: m.sender || 'user', text: m.content || '' })),
+    z.record(z.any()).transform(m => ({
+      sender: String(m.sender || m.role || 'user').slice(0, 128),
+      text: String(m.text || m.content || '').slice(0, 50000)
+    }))
   ])).optional().default([]),
   clientTimestamp: z.string().max(64).optional()
 }).transform((data) => ({
   content: (data.content || data.message || '').trim(),
-  sessionId: data.sessionId,
-  contextHint: data.contextHint,
+  sessionId: data.sessionId || 'default-session',
+  contextHint: data.contextHint || undefined,
   voiceMode: Boolean(data.voiceMode),
-  overrideAgent: data.overrideAgent,
-  verbosity: data.verbosity || 'balanced',
+  overrideAgent: data.overrideAgent || undefined,
+  verbosity: (data.verbosity === 'micro' ? 'low' : data.verbosity === 'standard' ? 'balanced' : data.verbosity) || 'balanced',
   incognito: Boolean(data.incognito),
-  location: data.location,
+  location: data.location ? {
+    placeName: data.location.placeName || 'Current Location',
+    latitude: data.location.latitude ?? data.location.lat,
+    longitude: data.location.longitude ?? data.location.long,
+    city: data.location.city,
+    country: data.location.country
+  } : null,
   history: Array.isArray(data.history) ? data.history : [],
   clientTimestamp: data.clientTimestamp
 })).refine((data) => data.content.length > 0, {
@@ -61,20 +74,14 @@ export const chatMessageSchema = z.object({
  * Emotional journal entry schema with Geo-tagging & Feeling Analysis
  */
 export const journalEntrySchema = z.object({
-  title: z.string().max(200).optional().default('Journal Entry'),
-  content: z.string().max(10000).optional(),
-  entryText: z.string().max(10000).optional(),
-  mood: z.enum(['calm', 'focused', 'overwhelmed', 'tired', 'anxious', 'proud', 'neutral', 'happy', 'excited', 'sad', 'lowest', 'happiest', 'insightful']).optional().default('neutral'),
-  energyLevel: z.number().int().min(1).max(5).optional().default(3),
-  emotionalLandmark: z.enum(['happiest', 'lowest', 'proud', 'calm', 'neutral', 'breakthrough', 'insightful']).optional().default('neutral'),
-  location: z.object({
-    placeName: z.string().max(100).optional(),
-    latitude: z.number().min(-90).max(90).optional(),
-    longitude: z.number().min(-180).max(180).optional(),
-    city: z.string().max(100).optional(),
-    country: z.string().max(100).optional()
-  }).optional(),
-  tags: z.array(z.string().max(32)).max(10).optional().default([]),
+  title: z.string().max(250).optional().default('Journal Entry'),
+  content: z.string().max(20000).optional(),
+  entryText: z.string().max(20000).optional(),
+  mood: z.string().max(64).optional().default('neutral'),
+  energyLevel: z.number().min(1).max(5).optional().default(3),
+  emotionalLandmark: z.string().max(64).optional().default('neutral'),
+  location: z.any().nullable().optional(),
+  tags: z.array(z.string().max(64)).optional().default([]),
   sentimentScore: z.number().optional()
 }).transform((data) => ({
   ...data,
@@ -88,73 +95,73 @@ export const journalEntrySchema = z.object({
  * Planner task schema
  */
 export const taskSchema = z.object({
-  title: z.string().min(1, 'Task title is required').max(300),
-  description: z.string().max(2000).optional().default(''),
-  durationMinutes: z.number().int().min(5).max(480).optional().default(25),
-  priority: z.enum(['high', 'medium', 'low']).optional().default('medium'),
-  energyRequired: z.enum(['low', 'medium', 'high']).optional().default('medium'),
-  status: z.enum(['pending', 'in_progress', 'completed', 'delayed']).optional().default('pending'),
-  dueDate: z.string().max(64).optional(),
-  category: z.string().max(50).optional().default('general')
+  title: z.string().min(1, 'Task title is required').max(500),
+  description: z.string().max(5000).optional().default(''),
+  durationMinutes: z.number().min(1).max(1440).optional().default(25),
+  priority: z.string().max(32).optional().default('medium'),
+  energyRequired: z.string().max(32).optional().default('medium'),
+  status: z.string().max(32).optional().default('pending'),
+  dueDate: z.string().max(64).nullable().optional(),
+  category: z.string().max(100).optional().default('general')
 });
 
 /**
  * Kanban board item schema
  */
 export const kanbanSchema = z.object({
-  title: z.string().min(1, 'Card title is required').max(300),
-  description: z.string().max(2000).optional().default(''),
-  column: z.enum(['backlog', 'this_week', 'in_progress', 'done', 'recurring']),
-  domain: z.enum(['habits', 'hobbies', 'work', 'contacts', 'lifestyle', 'self']).optional().default('work'),
+  title: z.string().min(1, 'Card title is required').max(500),
+  description: z.string().max(5000).optional().default(''),
+  column: z.enum(['backlog', 'this_week', 'in_progress', 'done', 'recurring', 'blocked']).optional().default('backlog'),
+  domain: z.string().max(64).optional().default('work'),
   enteredInProgressAt: z.string().max(64).nullable().optional(),
-  priority: z.enum(['high', 'medium', 'low']).optional().default('medium'),
-  timeEstimateMinutes: z.number().int().min(1).max(480).optional().default(30)
+  priority: z.string().max(32).optional().default('medium'),
+  timeEstimateMinutes: z.number().min(1).max(1440).optional().default(30)
 });
 
 /**
  * Habit tracking schema
  */
 export const habitSchema = z.object({
-  title: z.string().min(1, 'Habit title is required').max(200),
-  frequency: z.enum(['daily', 'weekly', 'weekdays', 'weekends']).optional().default('daily'),
-  domain: z.enum(['habits', 'hobbies', 'work', 'contacts', 'lifestyle', 'self']).optional().default('habits'),
-  targetDaysPerWeek: z.number().int().min(1).max(7).optional().default(7),
-  currentStreak: z.number().int().min(0).optional().default(0),
-  completedDates: z.array(z.string().max(16)).max(365).optional().default([])
+  title: z.string().min(1, 'Habit title is required').max(300),
+  frequency: z.string().max(32).optional().default('daily'),
+  domain: z.string().max(64).optional().default('habits'),
+  targetDaysPerWeek: z.number().min(1).max(7).optional().default(7),
+  currentStreak: z.number().optional().default(0),
+  completedDates: z.array(z.string().max(32)).optional().default([])
 });
 
 /**
  * Recurring Life Admin block schema
  */
 export const adminBlockSchema = z.object({
-  title: z.string().min(1, 'Admin title is required').max(200),
-  category: z.enum(['meal_planning', 'grocery', 'laundry', 'finances', 'admin', 'maintenance', 'relationships']),
-  frequency: z.enum(['daily', 'weekly', 'biweekly', 'monthly']),
-  durationMinutes: z.number().int().min(5).max(240).optional().default(30),
-  focusInstructions: z.string().max(1000).optional().default(''),
-  nextScheduledDate: z.string().max(64).optional()
+  title: z.string().min(1, 'Admin title is required').max(300),
+  category: z.string().max(64).optional().default('admin'),
+  frequency: z.string().max(32).optional().default('weekly'),
+  durationMinutes: z.number().min(1).max(1440).optional().default(30),
+  focusInstructions: z.string().max(2000).optional().default(''),
+  nextScheduledDate: z.string().max(64).nullable().optional()
 });
 
 /**
  * Date / Anniversary reminder schema
  */
 export const dateSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200),
+  title: z.string().min(1, 'Title is required').max(300),
   date: z.string().min(1, 'Date string is required').max(64),
-  type: z.enum(['birthday', 'anniversary', 'deadline', 'event', 'renewal']),
-  reminderDaysBefore: z.number().int().min(0).max(30).optional().default(3),
-  notes: z.string().max(1000).optional().default('')
+  type: z.string().max(64).optional().default('event'),
+  reminderDaysBefore: z.number().min(0).max(365).optional().default(3),
+  notes: z.string().max(2000).optional().default('')
 });
 
 /**
  * Brain dump collection schema
  */
 export const brainDumpSchema = z.object({
-  rawContent: z.string().min(1, 'Brain dump content cannot be empty').max(10000),
+  rawContent: z.string().min(1, 'Brain dump content cannot be empty').max(20000),
   processedItems: z.array(z.object({
-    text: z.string().max(500),
-    category: z.string().max(50),
-    actionType: z.string().max(50)
+    text: z.string().max(1000),
+    category: z.string().max(100).optional(),
+    actionType: z.string().max(100).optional()
   })).optional().default([])
 });
 
@@ -174,9 +181,11 @@ export function validateRequest(schema) {
         path: Array.isArray(err.path) ? err.path.join('.') : String(err.path || ''),
         message: err.message
       }));
+      console.warn('[validateRequest] Input validation failed:', formattedErrors);
+      const detailMsg = formattedErrors.map(e => `${e.path || 'payload'}: ${e.message}`).join(', ');
       return res.status(400).json({
         error: 'Bad Request',
-        message: 'Input validation failed. Please correct the payload fields.',
+        message: `Input validation failed (${detailMsg}). Please check the input.`,
         details: formattedErrors
       });
     }

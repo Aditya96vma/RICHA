@@ -278,7 +278,7 @@ ${notes.length ? notes.map(n => `* - ${n}`).join('\n') : '* - Clean mental space
             {formattedResult ? (
               // SECURITY: Strict DOMPurify sanitization
               <div
-                className="prose prose-sm max-w-none text-slate-800 leading-relaxed font-sans"
+                className="prose prose-sm max-w-none text-slate-800 dark:text-slate-100 leading-relaxed font-sans"
                 dangerouslySetInnerHTML={{ __html: sanitizeHTML(formattedResult) }}
               />
             ) : (
