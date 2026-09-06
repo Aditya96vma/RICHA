@@ -1,6 +1,6 @@
 // FILE: server/src/utils/geminiHelper.js
 // SECURITY: Directive 2 (OWASP LLM01, LLM02), Directive 4 (Secret Manager), Directive 6.2 (Model Fallback Ladder)
-// AGENT: Core AI Engine / All 7 Agents
+// AGENT: Core AI Engine / All 8 Agents
 
 import { GoogleGenAI } from '@google/genai';
 import { accessSecret } from './secretManager.js';

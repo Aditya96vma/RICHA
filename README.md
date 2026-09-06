@@ -15,6 +15,76 @@ Rather than treating executive function as an individual deficit to be cured by 
 
 ---
 
+## 📸 Interface Showcase & Visual Tour
+
+### 1. Bento Hub Central Dashboard (Your Executive Orbit)
+*An asymmetrical, Neo-Brutalist control center featuring real-time working memory capture, cognitive battery gauge, habit momentum, and automatic dilemma detection.*
+
+![RICHA Bento Hub Dashboard](docs/screenshots/01-bento-hub-dashboard.svg)
+
+---
+
+### 2. Decision Matrix & Suggestion Advisor (MCDA Engine)
+*Analysis paralysis resolution using Herbert Simon's Bounded Rationality, Suzy Welch's 10/10/10 rule, Bezos' Two-Way Door principle, and quantitative Multi-Criteria Decision Analysis.*
+
+![RICHA Decision Matrix and Advisor](docs/screenshots/02-decision-matrix-mcda.svg)
+
+---
+
+### 3. Socratic Hearth & 4D Executive Triage
+*Active listening audio voice diary with live speech-to-text, real-time agent routing (`Agent 2 • 4D Prioritizer`), Morgenstern 4D triage cards, and automatic memory vault harvesting.*
+
+![RICHA Socratic Hearth and 4D Triage](docs/screenshots/03-socratic-hearth-4d-triage.svg)
+
+---
+
+### 4. State-of-the-Art Adaptive Dark Mode & 8-Agent Demo Showcase
+*High-contrast, photophobia-friendly dark mode with the permanent Decision Matrix top navigation, 8-agent demo navigator, and frictionless "Continue with Google" authentication.*
+
+![RICHA Dark Mode and Demo Showcase](docs/screenshots/04-dark-mode-and-demo-showcase.svg)
+
+---
+
+## 🎨 State-of-the-Art Sensory UI & Frictionless Access
+
+RICHA is built to eliminate the cognitive friction that triggers task avoidance, executive freeze, and sensory overload in neurodivergent brains:
+
+### 1. Zero-Friction Authentication: "Continue with Google"
+* **One-Tap Federated Authentication**: Sign in instantly using **"Continue with Google"** powered by Firebase Authentication.
+* **No Passwords or Verification Friction**: Eliminates the working-memory burden of remembering passwords or confirming email links.
+* **Cryptographic Token Verification**: Client transmits verified Firebase ID tokens to the Express API gateway where `verifyFirebaseToken` cryptographically validates user identity (OWASP A01).
+* **Automatic Cloud Sync**: Once logged in with Google, all journal entries, 4D task buckets, decision matrices, and habit streaks sync securely to private Google Cloud Firestore partitions.
+
+### 2. Instant Sandbox Demo Mode (Zero-Login / Zero-GCP)
+* **1-Click Full System Exploration**: Click **"⚡ Try Demo Mode (Zero Login)"** on the landing page or toggle it from the header at any time.
+* **Rich Realistic Datasets Across All 8 Agents**: Pre-seeded with authentic ADHD and executive dysfunction scenarios:
+  * *Planner*: 5-phase breakdown of intimidating taxes and home office decluttering.
+  * *4D Prioritizer*: Morgenstern triage with pre-diminished 15-minute Minimum Viable Versions.
+  * *Decision Matrix*: Full MCDA evaluation comparing *"Push through sprint tonight"* vs. *"Restore baseline energy"*.
+  * *Sensory Shield*: Polyvagal sensory grounding protocol with physical anchors.
+  * *Kanban Flow*: Strict 3-card WIP limits with stagnation warnings and low-demand habit streaks.
+* **Complete Offline Functionality**: Operates entirely in-browser without requiring external API keys, database credentials, or network requests.
+
+### 3. Adaptive Sensory-Safe Dark Mode
+* **Engineered for Photophobia & Late-Night Focus**: Designed specifically for neurodivergent sensory profiles vulnerable to fluorescent glare and screen-induced sensory fatigue.
+* **Non-Glare Palette**: High-contrast, mathematically calculated neutral base (`#070b14` / `#0c1424`) accented with soft amber (`#f59e0b`), calm indigo, and muted emerald.
+* **Anti-Slop Visual Hierarchy**: Uses high-contrast 2px borders, tactile Neo-Brutalist drop shadows (`shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]`), and mathematical step scaling—strictly avoiding generic gradients, unreadable low-contrast grays, or distracting glowing animations.
+
+### 4. Dual Bento Density Control (Calm vs. Telemetry)
+* **Calm Mode (Low Cognitive Load)**: Simplifies the Bento Hub into a serene, single-column stream emphasizing only current mood, primary emotional landmark, and a single next physical action. Ideal for active burnout and high executive load.
+* **Telemetry Mode (High-Density Multi-Agent)**: Expands the Bento Hub into an asymmetrical multi-widget command center displaying live working memory, cognitive battery gauges, habit momentum, WIP cards, and Socratic inquiry chips.
+
+### 5. First-Class Decision Matrix Navigation
+* **Prominently Visible Top Tab**: Positioned directly on the main desktop navigation bar (`Decision Matrix` with `Scale` icon) and mobile drawer, ensuring 1-click access at all times.
+* **Interactive Bento Dilemma Tile**: A dedicated tile in the Bento Hub with instant 1-click dilemma templates (*"Push through vs. Rest baseline"*, *"Full perfection vs. Minimum viable test"*).
+* **Conversational Handoff & Slash Command**: Invoke the decision engine directly in chat via `/decide` or by typing natural dilemma language (e.g., *"I can't choose between A and B"*), which automatically routes to Agent 3.
+
+### 6. Single-Tap Safe Harbor ("I'm Overwhelmed" SOS)
+* **Persistent Emergency Button**: Accessible from the header of every view in both light and dark mode.
+* **Immediate De-Escalation**: Triggers an instant sensory dimming overlay, strips away all task lists and alarms, and guides the user through a low-demand 120-second physiological sigh exercise.
+
+---
+
 ## 🏛️ System Architecture Overview
 
 RICHA utilizes a decoupled, vendor-agnostic architecture designed for zero cloud lock-in:

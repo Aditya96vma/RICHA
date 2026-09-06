@@ -1,5 +1,5 @@
 // FILE: src/data/demoShowcaseData.ts
-// Demo Mode Showcase Dataset: Rich, realistic examples across all 7 agents and the Bento Hub
+// Demo Mode Showcase Dataset: Rich, realistic examples across all 8 agents and the Bento Hub
 
 export interface DemoFeatureExample {
   title: string;

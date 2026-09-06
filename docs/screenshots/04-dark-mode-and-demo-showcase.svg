@@ -1,0 +1,227 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%" style="background:#070b14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <filter id="dark-shadow" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="4" dy="4" stdDeviation="0" flood-color="#000000" flood-opacity="0.8" />
+    </filter>
+    <filter id="dark-shadow-sm" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="2" dy="2" stdDeviation="0" flood-color="#000000" flood-opacity="0.8" />
+    </filter>
+    <linearGradient id="amberGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+
+  <!-- Dark Top Header Bar -->
+  <rect x="0" y="0" width="1200" height="64" fill="#0c1424" stroke="#1e293b" stroke-width="2" />
+  
+  <g transform="translate(24, 20)">
+    <circle cx="8" cy="12" r="5" fill="#ef4444" />
+    <circle cx="24" cy="12" r="5" fill="#f59e0b" />
+    <circle cx="40" cy="12" r="5" fill="#10b981" />
+  </g>
+
+  <!-- Brand and Title -->
+  <g transform="translate(84, 18)">
+    <rect x="0" y="0" width="32" height="28" rx="6" fill="#6366f1" stroke="#312e81" stroke-width="1.5" />
+    <text x="16" y="20" font-size="15" font-weight="900" fill="#ffffff" text-anchor="middle">R</text>
+    <text x="42" y="20" font-size="16" font-weight="900" fill="#ffffff">RICHA</text>
+    <text x="100" y="20" font-size="11" font-weight="800" fill="#f59e0b" letter-spacing="1">DARK MODE • SENSORY HARBOR</text>
+  </g>
+
+  <!-- Navigation Tabs (including Decision Matrix) -->
+  <g transform="translate(420, 16)">
+    <rect x="0" y="0" width="460" height="32" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1" />
+    <!-- Journal -->
+    <rect x="4" y="4" width="70" height="24" rx="6" fill="#334155" />
+    <text x="39" y="20" font-size="11" font-weight="700" fill="#94a3b8" text-anchor="middle">Journal</text>
+    <!-- Orbit -->
+    <text x="120" y="20" font-size="11" font-weight="700" fill="#94a3b8" text-anchor="middle">Your Orbit</text>
+    <!-- Decision Matrix (Active Highlighted) -->
+    <rect x="165" y="4" width="118" height="24" rx="6" fill="#f59e0b" />
+    <text x="224" y="20" font-size="11" font-weight="900" fill="#0f172a" text-anchor="middle">⚖️ Decision Matrix</text>
+    <!-- Action Tools -->
+    <text x="330" y="20" font-size="11" font-weight="700" fill="#94a3b8" text-anchor="middle">Action Tools ▾</text>
+    <!-- Habits -->
+    <text x="410" y="20" font-size="11" font-weight="700" fill="#94a3b8" text-anchor="middle">Habits</text>
+  </g>
+
+  <!-- Right Header: Dark Mode Indicator & Safe Harbor SOS -->
+  <g transform="translate(920, 16)">
+    <!-- Dark Mode Toggle Pill -->
+    <rect x="0" y="0" width="80" height="32" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+    <text x="40" y="21" font-size="11" font-weight="800" fill="#38bdf8" text-anchor="middle">🌙 DARK</text>
+    
+    <!-- Safe Harbor SOS Button -->
+    <rect x="92" y="0" width="164" height="32" rx="8" fill="#e11d48" stroke="#9f1239" stroke-width="1.5" filter="url(#dark-shadow-sm)" />
+    <text x="174" y="21" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">🛡️ I'M OVERWHELMED</text>
+  </g>
+
+  <!-- Top Banner: 8-Agent Demo Showcase Navigator -->
+  <g transform="translate(30, 78)">
+    <rect x="0" y="0" width="1140" height="52" rx="14" fill="#18130a" stroke="#d97706" stroke-width="2" filter="url(#dark-shadow-sm)" />
+    <circle cx="28" cy="26" r="14" fill="#f59e0b" />
+    <text x="28" y="32" font-size="14" font-weight="900" fill="#000000" text-anchor="middle">★</text>
+    <text x="56" y="24" font-size="12" font-weight="900" fill="#fbbf24">OFFLINE-FIRST DEMO SHOWCASE (ALL 8 AGENTS)</text>
+    <text x="56" y="40" font-size="11" font-weight="500" fill="#cbd5e1">Explore rich, realistic pre-loaded scenarios across all 8 specialized cognitive agents with zero login.</text>
+    
+    <!-- 8 Agent Quick Pills -->
+    <g transform="translate(680, 12)">
+      <rect x="0" y="0" width="430" height="28" rx="8" fill="#2d1c07" stroke="#b45309" stroke-width="1" />
+      <text x="14" y="18" font-size="10" font-weight="700" fill="#94a3b8">1. Planner</text>
+      <text x="75" y="18" font-size="10" font-weight="700" fill="#94a3b8">2. 4D</text>
+      <!-- Agent 3 Active -->
+      <rect x="105" y="3" width="90" height="22" rx="5" fill="#f59e0b" />
+      <text x="150" y="18" font-size="10" font-weight="900" fill="#0f172a" text-anchor="middle">3. Decision</text>
+      <text x="206" y="18" font-size="10" font-weight="700" fill="#94a3b8">4. Admin</text>
+      <text x="260" y="18" font-size="10" font-weight="700" fill="#94a3b8">5. Sensory</text>
+      <text x="320" y="18" font-size="10" font-weight="700" fill="#94a3b8">6. TimeBox</text>
+      <text x="382" y="18" font-size="10" font-weight="700" fill="#94a3b8">7-8...</text>
+    </g>
+  </g>
+
+  <!-- Left Main Card: Decision Matrix in Dark Mode (Agent 3) -->
+  <g transform="translate(30, 146)">
+    <rect x="0" y="0" width="700" height="500" rx="16" fill="#0c1424" stroke="#334155" stroke-width="2" filter="url(#dark-shadow)" />
+    
+    <!-- Card Header -->
+    <g transform="translate(24, 24)">
+      <rect x="0" y="0" width="32" height="32" rx="8" fill="#f59e0b" />
+      <text x="16" y="22" font-size="16" text-anchor="middle">⚖️</text>
+      <text x="44" y="16" font-size="11" font-weight="900" fill="#f59e0b" letter-spacing="1">AGENT 3 • MULTI-CRITERIA DECISION ANALYSIS (MCDA)</text>
+      <text x="44" y="36" font-size="18" font-weight="900" fill="#ffffff">Decision Matrix &amp; Suggestion Advisor</text>
+    </g>
+
+    <!-- Dilemma Input Box -->
+    <g transform="translate(24, 76)">
+      <rect x="0" y="0" width="652" height="42" rx="10" fill="#070b14" stroke="#334155" stroke-width="1.5" />
+      <text x="16" y="26" font-size="13" font-weight="600" fill="#e2e8f0">"Push through quarterly sprint tonight vs. Stop now &amp; restore baseline energy"</text>
+    </g>
+
+    <!-- Decision Options Scoring Matrix (Dark Mode Table) -->
+    <g transform="translate(24, 134)">
+      <rect x="0" y="0" width="652" height="190" rx="12" fill="#121b2d" stroke="#1e293b" stroke-width="1.5" />
+      
+      <!-- Table Header -->
+      <rect x="0" y="0" width="652" height="36" rx="12" fill="#1e293b" />
+      <text x="20" y="23" font-size="11" font-weight="800" fill="#94a3b8">EVALUATION CRITERIA</text>
+      <text x="240" y="23" font-size="11" font-weight="800" fill="#94a3b8">WEIGHT</text>
+      <text x="350" y="23" font-size="11" font-weight="800" fill="#f87171">OPTION A (PUSH)</text>
+      <text x="510" y="23" font-size="11" font-weight="800" fill="#4ade80">OPTION B (REST) ★</text>
+
+      <!-- Row 1: Energy Battery -->
+      <line x1="0" y1="36" x2="652" y2="36" stroke="#334155" stroke-width="1" />
+      <text x="20" y="60" font-size="12" font-weight="700" fill="#e2e8f0">⚡ Cognitive Battery Drain</text>
+      <text x="240" y="60" font-size="11" font-weight="800" fill="#f59e0b">x1.2</text>
+      <text x="370" y="60" font-size="12" font-weight="700" fill="#f87171">1 / 5 (Severe)</text>
+      <text x="530" y="60" font-size="12" font-weight="700" fill="#4ade80">5 / 5 (Protected)</text>
+
+      <!-- Row 2: Reversibility -->
+      <line x1="0" y1="74" x2="652" y2="74" stroke="#334155" stroke-width="1" />
+      <text x="20" y="98" font-size="12" font-weight="700" fill="#e2e8f0">🚪 Reversibility (Two-Way Door)</text>
+      <text x="240" y="98" font-size="11" font-weight="800" fill="#f59e0b">x1.0</text>
+      <text x="370" y="98" font-size="12" font-weight="700" fill="#94a3b8">3 / 5</text>
+      <text x="530" y="98" font-size="12" font-weight="700" fill="#4ade80">5 / 5 (Reversible)</text>
+
+      <!-- Row 3: 10/10/10 Regret -->
+      <line x1="0" y1="112" x2="652" y2="112" stroke="#334155" stroke-width="1" />
+      <text x="20" y="136" font-size="12" font-weight="700" fill="#e2e8f0">⏳ 10-Month Regret Minimization</text>
+      <text x="240" y="136" font-size="11" font-weight="800" fill="#f59e0b">x1.3</text>
+      <text x="370" y="136" font-size="12" font-weight="700" fill="#f87171">2 / 5 (Burnout Risk)</text>
+      <text x="530" y="136" font-size="12" font-weight="700" fill="#4ade80">4.8 / 5</text>
+
+      <!-- Total Score Row -->
+      <rect x="0" y="152" width="652" height="38" rx="0" fill="#0f172a" />
+      <text x="20" y="176" font-size="12" font-weight="900" fill="#ffffff">WEIGHTED MCDA SCORE</text>
+      <text x="370" y="176" font-size="14" font-weight="900" fill="#f87171">8.2 / 25</text>
+      <text x="530" y="176" font-size="15" font-weight="900" fill="#4ade80">22.4 / 25 (WINNER)</text>
+    </g>
+
+    <!-- Minimum Viable Commitment Output Box -->
+    <g transform="translate(24, 340)">
+      <rect x="0" y="0" width="652" height="96" rx="12" fill="#18130a" stroke="#f59e0b" stroke-width="2" />
+      <text x="18" y="24" font-size="11" font-weight="900" fill="#f59e0b">RECOMMENDED MINIMUM VIABLE COMMITMENT (MVC):</text>
+      <text x="18" y="48" font-size="13" font-weight="700" fill="#ffffff">"Spend 12 minutes drafting 3 rough bullet points, then deliberately close laptop."</text>
+      <text x="18" y="72" font-size="11" font-weight="500" fill="#94a3b8">Two-Way Door classified: The sprint review can be reviewed tomorrow morning at 9:00 AM.</text>
+      
+      <!-- 1-Click Action to Planner -->
+      <rect x="470" y="24" width="164" height="32" rx="8" fill="#f59e0b" filter="url(#dark-shadow-sm)" />
+      <text x="552" y="44" font-size="11" font-weight="900" fill="#0f172a" text-anchor="middle">Launch in Planner →</text>
+    </g>
+
+    <!-- Bottom Neuro-Affordance Tags -->
+    <g transform="translate(24, 452)">
+      <rect x="0" y="0" width="130" height="24" rx="6" fill="#1e293b" />
+      <text x="65" y="16" font-size="10" font-weight="700" fill="#38bdf8" text-anchor="middle">Herbert Simon Satisficing</text>
+
+      <rect x="140" y="0" width="130" height="24" rx="6" fill="#1e293b" />
+      <text x="205" y="16" font-size="10" font-weight="700" fill="#a78bfa" text-anchor="middle">Heath Brothers W.R.A.P.</text>
+
+      <rect x="280" y="0" width="120" height="24" rx="6" fill="#1e293b" />
+      <text x="340" y="16" font-size="10" font-weight="700" fill="#4ade80" text-anchor="middle">Two-Way Door (Bezos)</text>
+
+      <rect x="410" y="0" width="110" height="24" rx="6" fill="#1e293b" />
+      <text x="465" y="16" font-size="10" font-weight="700" fill="#fbbf24" text-anchor="middle">Somatic Marker Check</text>
+    </g>
+  </g>
+
+  <!-- Right Panel: Authentication & Sensory Design Features -->
+  <g transform="translate(750, 146)">
+    <!-- Auth & Access Modes Card -->
+    <rect x="0" y="0" width="420" height="236" rx="16" fill="#0c1424" stroke="#334155" stroke-width="2" filter="url(#dark-shadow)" />
+    <g transform="translate(20, 20)">
+      <text x="0" y="16" font-size="11" font-weight="900" fill="#818cf8" letter-spacing="1">AUTHENTICATION &amp; ACCESS MODES</text>
+      <text x="0" y="38" font-size="16" font-weight="900" fill="#ffffff">Zero-Friction Entry</text>
+      
+      <!-- Continue with Google Button Mockup -->
+      <g transform="translate(0, 56)">
+        <rect x="0" y="0" width="380" height="46" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" filter="url(#dark-shadow-sm)" />
+        <!-- Google 'G' icon representation -->
+        <circle cx="28" cy="23" r="12" fill="#f8fafc" />
+        <text x="28" y="28" font-size="14" font-weight="900" fill="#ea4335" text-anchor="middle">G</text>
+        <text x="190" y="28" font-size="14" font-weight="800" fill="#0f172a" text-anchor="middle">Continue with Google</text>
+      </g>
+      <text x="0" y="122" font-size="11" font-weight="500" fill="#94a3b8">Firebase Federated Auth • Secure JWT validation • No passwords to remember</text>
+
+      <!-- Instant Sandbox Demo Mode Button -->
+      <g transform="translate(0, 134)">
+        <rect x="0" y="0" width="380" height="42" rx="12" fill="#18130a" stroke="#d97706" stroke-width="2" />
+        <text x="190" y="26" font-size="13" font-weight="900" fill="#fbbf24" text-anchor="middle">⚡ Instant Sandbox Demo Mode (1-Click)</text>
+      </g>
+      <text x="0" y="196" font-size="11" font-weight="500" fill="#cbd5e1">Explore all 8 agents instantly • Rich pre-seeded data • Zero setup needed</text>
+    </g>
+  </g>
+
+  <!-- Right Panel Bottom: State-of-the-Art Sensory UI Features -->
+  <g transform="translate(750, 400)">
+    <rect x="0" y="0" width="420" height="246" rx="16" fill="#0c1424" stroke="#334155" stroke-width="2" filter="url(#dark-shadow)" />
+    <g transform="translate(20, 20)">
+      <text x="0" y="16" font-size="11" font-weight="900" fill="#38bdf8" letter-spacing="1">STATE-OF-THE-ART SENSORY DESIGN</text>
+      <text x="0" y="38" font-size="16" font-weight="900" fill="#ffffff">Engineered for Neurodivergent Minds</text>
+      
+      <!-- Feature 1: Dark Mode -->
+      <g transform="translate(0, 56)">
+        <circle cx="12" cy="10" r="10" fill="#1e293b" />
+        <text x="12" y="14" font-size="11" text-anchor="middle">🌙</text>
+        <text x="32" y="14" font-size="12" font-weight="700" fill="#ffffff">Adaptive Eye-Safe Dark Mode</text>
+        <text x="32" y="30" font-size="11" font-weight="500" fill="#94a3b8">Photophobia &amp; sensory overstimulation protection</text>
+      </g>
+
+      <!-- Feature 2: Bento Density -->
+      <g transform="translate(0, 106)">
+        <circle cx="12" cy="10" r="10" fill="#1e293b" />
+        <text x="12" y="14" font-size="11" text-anchor="middle">🎛️</text>
+        <text x="32" y="14" font-size="12" font-weight="700" fill="#ffffff">Calm vs. Telemetry Density Modes</text>
+        <text x="32" y="30" font-size="11" font-weight="500" fill="#94a3b8">Switch from serene single-column to high-density bento</text>
+      </g>
+
+      <!-- Feature 3: Safe Harbor SOS -->
+      <g transform="translate(0, 156)">
+        <circle cx="12" cy="10" r="10" fill="#1e293b" />
+        <text x="12" y="14" font-size="11" text-anchor="middle">🛡️</text>
+        <text x="32" y="14" font-size="12" font-weight="700" fill="#ffffff">Single-Tap "I'm Overwhelmed" SOS</text>
+        <text x="32" y="30" font-size="11" font-weight="500" fill="#94a3b8">Immediate polyvagal grounding &amp; sensory de-escalation</text>
+      </g>
+    </g>
+  </g>
+</svg>

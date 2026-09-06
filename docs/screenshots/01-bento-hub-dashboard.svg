@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%" style="background:#f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <filter id="shadow" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="4" dy="4" stdDeviation="0" flood-color="#0f172a" flood-opacity="1" />
+    </feDropShadow>
+    <filter id="shadow-sm" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="2" dy="2" stdDeviation="0" flood-color="#0f172a" flood-opacity="1" />
+    </feDropShadow>
+  </defs>
+
+  <!-- Browser / App Header Bar -->
+  <rect x="0" y="0" width="1200" height="60" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+  <circle cx="28" cy="30" r="6" fill="#ef4444" stroke="#0f172a" stroke-width="1.5" />
+  <circle cx="48" cy="30" r="6" fill="#f59e0b" stroke="#0f172a" stroke-width="1.5" />
+  <circle cx="68" cy="30" r="6" fill="#10b981" stroke="#0f172a" stroke-width="1.5" />
+  
+  <g transform="translate(100, 16)">
+    <rect x="0" y="0" width="36" height="28" rx="6" fill="#6366f1" stroke="#0f172a" stroke-width="2" />
+    <text x="18" y="20" font-size="16" font-weight="900" fill="#ffffff" text-anchor="middle">R</text>
+    <text x="46" y="20" font-size="16" font-weight="900" fill="#0f172a">RICHA</text>
+    <text x="108" y="20" font-size="11" font-weight="700" fill="#6366f1">COGNITIVE COMPANION</text>
+  </g>
+
+  <!-- Status Badges in Header -->
+  <g transform="translate(860, 14)">
+    <rect x="0" y="0" width="160" height="32" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="2" filter="url(#shadow-sm)" />
+    <circle cx="16" cy="16" r="4" fill="#10b981" />
+    <text x="28" y="20" font-size="11" font-weight="800" fill="#065f46">Sandbox Demo Active</text>
+    <rect x="180" y="0" width="130" height="32" rx="8" fill="#f1f5f9" stroke="#0f172a" stroke-width="2" filter="url(#shadow-sm)" />
+    <text x="245" y="20" font-size="11" font-weight="800" fill="#0f172a" text-anchor="middle">8 Agents Online</text>
+  </g>
+
+  <!-- Showcase Navigation Tabs Bar -->
+  <rect x="0" y="60" width="1200" height="48" fill="#ffffff" stroke="#0f172a" stroke-width="1" />
+  <g transform="translate(24, 70)">
+    <!-- Tab 1 Active: Bento Hub -->
+    <rect x="0" y="0" width="110" height="28" rx="6" fill="#6366f1" stroke="#0f172a" stroke-width="1.5" />
+    <text x="55" y="18" font-size="11" font-weight="800" fill="#ffffff" text-anchor="middle">1. Bento Hub</text>
+
+    <!-- Tab 2: 4D Triage -->
+    <rect x="120" y="0" width="110" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="175" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">2. 4D Triage</text>
+
+    <!-- Tab 3: Decision Matrix -->
+    <rect x="240" y="0" width="125" height="28" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5" />
+    <text x="302" y="18" font-size="11" font-weight="800" fill="#92400e" text-anchor="middle">3. Decision Matrix</text>
+
+    <!-- Tab 4: Life Admin -->
+    <rect x="375" y="0" width="105" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="427" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">4. Life Admin</text>
+
+    <!-- Tab 5: Sensory Wellbeing -->
+    <rect x="490" y="0" width="115" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="547" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">5. Sensory Reset</text>
+
+    <!-- Tab 6: Socratic Hearth -->
+    <rect x="615" y="0" width="125" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="677" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">6. Socratic Hearth</text>
+
+    <!-- Tab 7: Kanban Flow -->
+    <rect x="750" y="0" width="110" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="805" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">7. Kanban Flow</text>
+
+    <!-- Tab 8: Bullet Log -->
+    <rect x="870" y="0" width="105" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="922" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">8. Bullet Log</text>
+  </g>
+
+  <!-- MAIN DASHBOARD CONTENT (BENTO GRID) -->
+  
+  <!-- Left Column: Working Memory & Quick Capture (Width: 480) -->
+  <g transform="translate(24, 126)">
+    <!-- Card: Quick Working Memory Capture -->
+    <rect x="0" y="0" width="460" height="250" rx="14" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)" />
+    <g transform="translate(20, 20)">
+      <text x="0" y="16" font-size="15" font-weight="900" fill="#0f172a">🧠 Working Memory Quick-Capture</text>
+      <text x="0" y="34" font-size="11" font-weight="500" fill="#64748b">Externalise what is overloading your working memory right now</text>
+      
+      <!-- Text Area Simulation -->
+      <rect x="0" y="46" width="420" height="96" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+      <text x="14" y="72" font-size="13" font-weight="500" fill="#0f172a">"Can't decide if I should push through the report or sleep"</text>
+      
+      <!-- Auto Dilemma Chip Detection -->
+      <rect x="0" y="152" width="420" height="34" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5" />
+      <circle cx="16" cy="169" r="6" fill="#d97706" />
+      <text x="28" y="173" font-size="11" font-weight="800" fill="#92400e">⚡ Indecision Detected: Evaluate in Decision Matrix</text>
+      <rect x="335" y="157" width="75" height="24" rx="6" fill="#f59e0b" stroke="#0f172a" stroke-width="1.5" />
+      <text x="372" y="173" font-size="11" font-weight="900" fill="#0f172a" text-anchor="middle">Evaluate →</text>
+
+      <!-- Action Buttons -->
+      <rect x="0" y="196" width="130" height="32" rx="8" fill="#6366f1" stroke="#0f172a" stroke-width="1.5" filter="url(#shadow-sm)" />
+      <text x="65" y="216" font-size="11" font-weight="800" fill="#ffffff" text-anchor="middle">⚡ Triage Task</text>
+
+      <rect x="142" y="196" width="150" height="32" rx="8" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5" filter="url(#shadow-sm)" />
+      <text x="217" y="216" font-size="11" font-weight="800" fill="#0f172a" text-anchor="middle">🎙️ Voice Record Entry</text>
+    </g>
+
+    <!-- Card: Cognitive Energy Battery & Sensory Status -->
+    <rect x="0" y="270" width="460" height="245" rx="14" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)" />
+    <g transform="translate(20, 290)">
+      <text x="0" y="16" font-size="15" font-weight="900" fill="#0f172a">⚡ Cognitive Energy &amp; Battery State</text>
+      
+      <!-- Energy Meter -->
+      <rect x="0" y="34" width="420" height="28" rx="8" fill="#f1f5f9" stroke="#0f172a" stroke-width="2" />
+      <rect x="2" y="36" width="285" height="24" rx="6" fill="#10b981" />
+      <text x="210" y="52" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">68% Baseline Operational</text>
+
+      <g transform="translate(0, 78)">
+        <rect x="0" y="0" width="200" height="60" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+        <text x="12" y="22" font-size="10" font-weight="700" fill="#64748b">SENSORY LOAD</text>
+        <text x="12" y="44" font-size="14" font-weight="900" fill="#059669">Moderate (Green)</text>
+
+        <rect x="220" y="0" width="200" height="60" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+        <text x="12" y="22" font-size="10" font-weight="700" fill="#64748b">ACTIVE HABIT STREAK</text>
+        <text x="12" y="44" font-size="14" font-weight="900" fill="#6366f1">🔥 8-Day Momentum</text>
+      </g>
+
+      <!-- Sensory Shield Button -->
+      <rect x="0" y="152" width="420" height="38" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5" filter="url(#shadow-sm)" />
+      <text x="210" y="176" font-size="12" font-weight="900" fill="#b91c1c" text-anchor="middle">🛡️ Acute Overload? Activate Sensory Shield (Sub-5ms Reset)</text>
+    </g>
+  </g>
+
+  <!-- Right Column: 4D Priority Triage & Decision Matrix Teaser (Width: 680) -->
+  <g transform="translate(508, 126)">
+    <!-- 4D Executive Triage Matrix Card -->
+    <rect x="0" y="0" width="668" height="340" rx="14" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)" />
+    <g transform="translate(24, 24)">
+      <text x="0" y="16" font-size="16" font-weight="900" fill="#0f172a">🎯 4D Executive Triage (Julie Morgenstern)</text>
+      <text x="0" y="34" font-size="11" font-weight="600" fill="#64748b">Anti-Perfectionism Filter: Eliminate, Postpone, Trim, or Delegate</text>
+
+      <!-- 4 Quadrants Grid -->
+      <g transform="translate(0, 48)">
+        <!-- 1. DELETE (Rose) -->
+        <rect x="0" y="0" width="300" height="115" rx="10" fill="#fef2f2" stroke="#f87171" stroke-width="1.5" />
+        <text x="14" y="24" font-size="12" font-weight="900" fill="#b91c1c">🗑️ DELETE (Guilt-Free Drops)</text>
+        <text x="14" y="46" font-size="11" font-weight="700" fill="#7f1d1d">• Re-formatting 40-page appendix</text>
+        <text x="14" y="66" font-size="11" font-weight="700" fill="#7f1d1d">• Cleaning old email newsletters</text>
+        <text x="14" y="90" font-size="10" font-weight="800" fill="#ef4444">Saved 3.5 hrs cognitive fatigue</text>
+
+        <!-- 2. DELAY (Amber) -->
+        <rect x="320" y="0" width="300" height="115" rx="10" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.5" />
+        <text x="14" y="24" font-size="12" font-weight="900" fill="#92400e">⏳ DELAY (Quarantined Buffer)</text>
+        <text x="14" y="46" font-size="11" font-weight="700" fill="#78350f">• Organizing office bookshelf</text>
+        <text x="14" y="66" font-size="11" font-weight="700" fill="#78350f">• Filing dental claim receipts</text>
+        <text x="14" y="90" font-size="10" font-weight="800" fill="#d97706">Scheduled to Friday 2:00 PM</text>
+
+        <!-- 3. DIMINISH (Indigo) -->
+        <rect x="0" y="130" width="300" height="115" rx="10" fill="#e0e7ff" stroke="#818cf8" stroke-width="1.5" />
+        <text x="14" y="24" font-size="12" font-weight="900" fill="#3730a3">✂️ DIMINISH (Minimum Viable Version)</text>
+        <text x="14" y="46" font-size="11" font-weight="700" fill="#312e81">• Send 3-bullet sprint recap instead of 5p doc</text>
+        <text x="14" y="66" font-size="11" font-weight="700" fill="#312e81">• 10-minute speed tidy instead of deep clean</text>
+        <text x="14" y="90" font-size="10" font-weight="800" fill="#4f46e5">Scope trimmed by 70%</text>
+
+        <!-- 4. DELEGATE (Emerald) -->
+        <rect x="320" y="130" width="300" height="115" rx="10" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.5" />
+        <text x="14" y="24" font-size="12" font-weight="900" fill="#065f46">👥 DELEGATE (Assertive Scripting)</text>
+        <text x="14" y="46" font-size="11" font-weight="700" fill="#064e3b">• Ask Alex to sanity-check table figures</text>
+        <text x="14" y="66" font-size="11" font-weight="700" fill="#064e3b">• Automated billing notification loop</text>
+        <text x="14" y="90" font-size="10" font-weight="800" fill="#059669">Pre-scripted handoff generated</text>
+      </g>
+    </g>
+
+    <!-- Bottom Banner: Live Decision Matrix Agent 8 Highlight -->
+    <rect x="0" y="360" width="668" height="155" rx="14" fill="#fef3c7" stroke="#0f172a" stroke-width="2" filter="url(#shadow)" />
+    <g transform="translate(24, 380)">
+      <rect x="0" y="0" width="180" height="24" rx="6" fill="#f59e0b" stroke="#0f172a" stroke-width="1.5" />
+      <text x="90" y="16" font-size="10" font-weight="900" fill="#0f172a" text-anchor="middle">AGENT 8 • DECISION MATRIX</text>
+
+      <text x="195" y="17" font-size="13" font-weight="900" fill="#92400e">Two-Way Door Identified: Reversible Trial Recommended</text>
+
+      <text x="0" y="48" font-size="12" font-weight="700" fill="#0f172a">"Should I push through to finish the quarterly sprint report tonight, or stop now and recover?"</text>
+      <text x="0" y="68" font-size="11" font-weight="500" fill="#78350f">MCDA Recommendation: Option C (15-min low-stakes trial + shutdown) scored highest (23.2/25).</text>
+
+      <!-- Minimum Viable Commitment Tag -->
+      <rect x="0" y="84" width="460" height="32" rx="8" fill="#ffffff" stroke="#d97706" stroke-width="1.5" />
+      <text x="12" y="104" font-size="11" font-weight="800" fill="#0f172a">🎯 MVC: Outline 3 missing bullets in 15 mins, then close laptop.</text>
+
+      <rect x="475" y="84" width="165" height="32" rx="8" fill="#0f172a" stroke="#0f172a" stroke-width="1.5" />
+      <text x="557" y="104" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">Open Decision Matrix →</text>
+    </g>
+  </g>
+
+  <!-- Footer Info Bar -->
+  <rect x="0" y="645" width="1200" height="30" fill="#0f172a" />
+  <text x="24" y="665" font-size="11" font-weight="600" fill="#94a3b8">RICHA Cognitive Assistant v2.4 • 8 Autonomous Agents • Owner-Bound Firestore Sandbox • Zero Insecure Defaults</text>
+</svg>

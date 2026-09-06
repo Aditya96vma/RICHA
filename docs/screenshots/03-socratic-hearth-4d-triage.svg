@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%" style="background:#f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <filter id="shadow" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="4" dy="4" stdDeviation="0" flood-color="#0f172a" flood-opacity="1" />
+    </filter>
+    <filter id="shadow-sm" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="2" dy="2" stdDeviation="0" flood-color="#0f172a" flood-opacity="1" />
+    </filter>
+  </defs>
+
+  <!-- Top App Navigation -->
+  <rect x="0" y="0" width="1200" height="60" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+  <circle cx="28" cy="30" r="6" fill="#ef4444" stroke="#0f172a" stroke-width="1.5" />
+  <circle cx="48" cy="30" r="6" fill="#f59e0b" stroke="#0f172a" stroke-width="1.5" />
+  <circle cx="68" cy="30" r="6" fill="#10b981" stroke="#0f172a" stroke-width="1.5" />
+  
+  <g transform="translate(100, 16)">
+    <rect x="0" y="0" width="36" height="28" rx="6" fill="#6366f1" stroke="#0f172a" stroke-width="2" />
+    <text x="18" y="20" font-size="16" font-weight="900" fill="#ffffff" text-anchor="middle">R</text>
+    <text x="46" y="20" font-size="16" font-weight="900" fill="#0f172a">RICHA</text>
+    <text x="108" y="20" font-size="11" font-weight="700" fill="#6366f1">CONVERSATIONAL HEARTH &amp; 4D TRIAGE</text>
+  </g>
+
+  <!-- Navigation Tab Bar with Tab 6 Active (Socratic Hearth) -->
+  <rect x="0" y="60" width="1200" height="48" fill="#ffffff" stroke="#0f172a" stroke-width="1" />
+  <g transform="translate(24, 70)">
+    <rect x="0" y="0" width="110" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="55" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">1. Bento Hub</text>
+
+    <rect x="120" y="0" width="110" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="175" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">2. 4D Triage</text>
+
+    <rect x="240" y="0" width="125" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="302" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">3. Decision Matrix</text>
+
+    <rect x="375" y="0" width="105" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="427" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">4. Life Admin</text>
+
+    <rect x="490" y="0" width="115" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="547" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">5. Sensory Reset</text>
+
+    <!-- Tab 6 Active: Socratic Hearth -->
+    <rect x="615" y="0" width="135" height="28" rx="6" fill="#6366f1" stroke="#0f172a" stroke-width="1.5" />
+    <text x="682" y="18" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">💬 6. Socratic Hearth</text>
+
+    <rect x="760" y="0" width="110" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="815" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">7. Kanban Flow</text>
+
+    <rect x="880" y="0" width="105" height="28" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+    <text x="932" y="18" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">8. Bullet Log</text>
+  </g>
+
+  <!-- CHAT INTERFACE WORKSPACE -->
+  <g transform="translate(24, 126)">
+    <!-- Main Chat Container -->
+    <rect x="0" y="0" width="1152" height="505" rx="14" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)" />
+    
+    <!-- Chat Header Sub-Bar -->
+    <rect x="0" y="0" width="1152" height="44" rx="14" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5" />
+    <g transform="translate(20, 14)">
+      <circle cx="8" cy="8" r="5" fill="#10b981" />
+      <text x="22" y="12" font-size="12" font-weight="800" fill="#0f172a">RICHA AI Socratic Hearth • Active Listening &amp; Executive Scaffolding</text>
+      
+      <!-- Agent Mode Selector Pill -->
+      <rect x="940" y="-4" width="170" height="26" rx="6" fill="#ffffff" stroke="#0f172a" stroke-width="1.5" />
+      <text x="1025" y="14" font-size="10" font-weight="800" fill="#0f172a" text-anchor="middle">Mode: Auto-Route (Intelligent)</text>
+    </g>
+
+    <!-- Message 1: User Voice / Text Entry -->
+    <g transform="translate(30, 64)">
+      <!-- User Avatar / Label -->
+      <text x="1090" y="18" font-size="11" font-weight="800" fill="#64748b" text-anchor="end">YOU (VOICE INPUT) • 10:14 AM</text>
+      <rect x="420" y="26" width="670" height="60" rx="12" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5" filter="url(#shadow-sm)" />
+      <text x="440" y="52" font-size="13" font-weight="600" fill="#0f172a">"I have 8 things on my plate and feeling completely frozen: 1. Clean desk 2. Finish quarterly report</text>
+      <text x="440" y="72" font-size="13" font-weight="600" fill="#0f172a">3. Doctor follow-up 4. Laundry 5. Review pull requests 6. Grocery trip... Help me triage this!"</text>
+    </g>
+
+    <!-- Message 2: Agent 2 (4D Prioritizer) Response -->
+    <g transform="translate(30, 168)">
+      <!-- Agent Badge -->
+      <rect x="0" y="0" width="175" height="22" rx="6" fill="#f59e0b" stroke="#0f172a" stroke-width="1.5" />
+      <text x="87" y="15" font-size="10" font-weight="900" fill="#0f172a" text-anchor="middle">AGENT 2 • 4D PRIORITIZER</text>
+      <text x="188" y="15" font-size="11" font-weight="600" fill="#64748b">10:14 AM • Intent: 4D Executive Triage</text>
+
+      <!-- Agent Response Bubble -->
+      <rect x="0" y="28" width="1090" height="185" rx="12" fill="#fffbeb" stroke="#0f172a" stroke-width="2" filter="url(#shadow-sm)" />
+      
+      <g transform="translate(20, 48)">
+        <text x="0" y="0" font-size="13" font-weight="800" fill="#78350f">I hear you. When 8 unweighted tasks hit working memory simultaneously, executive freeze is a natural nervous system response. Let's run Julie Morgenstern's 4D triage:</text>
+
+        <!-- 4D Horizontal Cards -->
+        <g transform="translate(0, 16)">
+          <!-- Card 1: DELETE -->
+          <rect x="0" y="0" width="250" height="85" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5" />
+          <text x="12" y="20" font-size="11" font-weight="900" fill="#b91c1c">🗑️ DELETE (Drop guilt-free)</text>
+          <text x="12" y="40" font-size="10" font-weight="600" fill="#7f1d1d">• Clean desk (Cosmetic avoidance)</text>
+          <text x="12" y="58" font-size="10" font-weight="600" fill="#7f1d1d">• Clear 0-inbox</text>
+          <text x="12" y="74" font-size="9" font-weight="800" fill="#ef4444">Frees immediate bandwidth</text>
+
+          <!-- Card 2: DELAY -->
+          <rect x="265" y="0" width="250" height="85" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5" />
+          <text x="12" y="20" font-size="11" font-weight="900" fill="#92400e">⏳ DELAY (Buffer quarantined)</text>
+          <text x="12" y="40" font-size="10" font-weight="600" fill="#78350f">• Laundry (Scheduled to 8 PM)</text>
+          <text x="12" y="58" font-size="10" font-weight="600" fill="#78350f">• Non-urgent PR review</text>
+          <text x="12" y="74" font-size="9" font-weight="800" fill="#d97706">Protected from today's focus</text>
+
+          <!-- Card 3: DIMINISH (MVV) -->
+          <rect x="530" y="0" width="250" height="85" rx="8" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5" />
+          <text x="12" y="20" font-size="11" font-weight="900" fill="#3730a3">✂️ DIMINISH (MVV Scope)</text>
+          <text x="12" y="40" font-size="10" font-weight="600" fill="#312e81">• Report: 3 bullets only (15m)</text>
+          <text x="12" y="58" font-size="10" font-weight="600" fill="#312e81">• Doctor: 1-line portal message</text>
+          <text x="12" y="74" font-size="9" font-weight="800" fill="#4f46e5">Scope reduced by 75%</text>
+
+          <!-- Card 4: DELEGATE -->
+          <rect x="795" y="0" width="250" height="85" rx="8" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5" />
+          <text x="12" y="20" font-size="11" font-weight="900" fill="#065f46">👥 DELEGATE / AUTOMATE</text>
+          <text x="12" y="40" font-size="10" font-weight="600" fill="#064e3b">• Groceries: 1-click re-order app</text>
+          <text x="12" y="58" font-size="10" font-weight="600" fill="#064e3b">• Team buddy review request</text>
+          <text x="12" y="74" font-size="9" font-weight="800" fill="#059669">Zero physical errands</text>
+        </g>
+
+        <!-- Memory Extraction Pill -->
+        <rect x="0" y="112" width="460" height="24" rx="6" fill="#ffffff" stroke="#10b981" stroke-width="1.5" />
+        <text x="12" y="128" font-size="10" font-weight="800" fill="#065f46">💾 Cognitive Insight Extracted: "Tends to clean desk to avoid initiation dread." (Saved to Memory Vault)</text>
+      </g>
+    </g>
+
+    <!-- Slash Commands & Quick Support Pill Bar -->
+    <g transform="translate(30, 400)">
+      <rect x="0" y="0" width="85" height="26" rx="6" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5" />
+      <text x="42" y="17" font-size="10" font-weight="900" fill="#0f172a" text-anchor="middle">/decide</text>
+
+      <rect x="95" y="0" width="95" height="26" rx="6" fill="#f59e0b" stroke="#0f172a" stroke-width="1.5" />
+      <text x="142" y="17" font-size="10" font-weight="900" fill="#0f172a" text-anchor="middle">/prioritize</text>
+
+      <rect x="200" y="0" width="75" height="26" rx="6" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5" />
+      <text x="237" y="17" font-size="10" font-weight="900" fill="#0f172a" text-anchor="middle">/plan</text>
+
+      <rect x="285" y="0" width="85" height="26" rx="6" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5" />
+      <text x="327" y="17" font-size="10" font-weight="900" fill="#0f172a" text-anchor="middle">/shield</text>
+
+      <rect x="380" y="0" width="75" height="26" rx="6" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5" />
+      <text x="417" y="17" font-size="10" font-weight="900" fill="#0f172a" text-anchor="middle">/bujo</text>
+
+      <text x="480" y="17" font-size="11" font-weight="700" fill="#64748b">Type slash commands or speak freely — RICHA auto-routes to all 8 agents.</text>
+    </g>
+
+    <!-- Bottom Chat Input Bar -->
+    <g transform="translate(30, 436)">
+      <rect x="0" y="0" width="980" height="50" rx="10" fill="#f8fafc" stroke="#0f172a" stroke-width="2" />
+      <text x="18" y="30" font-size="13" font-weight="500" fill="#94a3b8">Tell RICHA what's happening or how you feel... Type /decide, /prioritize, or /plan anytime.</text>
+
+      <!-- Audio Record Waveform Button -->
+      <rect x="880" y="8" width="85" height="34" rx="8" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5" />
+      <text x="922" y="29" font-size="11" font-weight="800" fill="#0f172a" text-anchor="middle">🎙️ Voice</text>
+
+      <!-- Send Button -->
+      <rect x="995" y="0" width="95" height="50" rx="10" fill="#6366f1" stroke="#0f172a" stroke-width="2" filter="url(#shadow-sm)" />
+      <text x="1042" y="31" font-size="13" font-weight="900" fill="#ffffff" text-anchor="middle">Send ⚡</text>
+    </g>
+  </g>
+
+  <!-- Footer Info Bar -->
+  <rect x="0" y="645" width="1200" height="30" fill="#0f172a" />
+  <text x="24" y="665" font-size="11" font-weight="600" fill="#94a3b8">RICHA Conversational Hearth • Real-Time Voice Diary • Pennebaker Expressive Writing • Julie Morgenstern 4D Triage</text>
+</svg>

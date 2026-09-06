@@ -136,13 +136,16 @@ export function Dashboard({ onLogout }: DashboardProps) {
             </h1>
           </div>
 
-          {/* Calm 3-Hub Segmented Navigation */}
-          <div className="hidden lg:flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+          {/* Calm Hub Segmented Navigation */}
+          <div className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
             {/* Primary Hearth (Conversational Journal) */}
             <button
               id="tab-chat"
-              onClick={() => setActiveTab('chat')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              onClick={() => {
+                setActiveTab('chat');
+                setActionMenuOpen(false);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'chat'
                   ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700 font-extrabold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
@@ -152,19 +155,53 @@ export function Dashboard({ onLogout }: DashboardProps) {
               <span>Journal</span>
             </button>
 
+            {/* Orbit / Bento Dashboard */}
+            <button
+              id="tab-overview"
+              onClick={() => {
+                setActiveTab('overview');
+                setActionMenuOpen(false);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'overview'
+                  ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700 font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <LayoutGrid className={`w-3.5 h-3.5 ${activeTab === 'overview' ? 'text-indigo-600' : 'text-slate-500'}`} />
+              <span>Your Orbit</span>
+            </button>
+
+            {/* Decision Matrix - Prominently Visible Agent 3 */}
+            <button
+              id="tab-decision"
+              onClick={() => {
+                setActiveTab('decision');
+                setActionMenuOpen(false);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'decision'
+                  ? 'bg-amber-100 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-amber-950 font-extrabold'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-amber-50/60'
+              }`}
+            >
+              <Scale className={`w-3.5 h-3.5 ${activeTab === 'decision' ? 'text-amber-800' : 'text-amber-600'}`} />
+              <span>Decision Matrix</span>
+            </button>
+
             {/* Action Space Dropdown Hub */}
             <div className="relative">
               <button
                 id="tab-actions-menu"
                 onClick={() => setActionMenuOpen(!actionMenuOpen)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  isActionTabActive
+                  isActionTabActive && activeTab !== 'decision'
                     ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700 font-extrabold'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
               >
-                <Zap className={`w-3.5 h-3.5 ${isActionTabActive ? 'text-indigo-600' : 'text-slate-500'}`} />
-                <span>Action Space</span>
+                <Zap className={`w-3.5 h-3.5 ${isActionTabActive && activeTab !== 'decision' ? 'text-indigo-600' : 'text-slate-500'}`} />
+                <span>Action Tools</span>
                 <span className="text-[10px] text-slate-400">▾</span>
               </button>
 
@@ -201,24 +238,30 @@ export function Dashboard({ onLogout }: DashboardProps) {
               )}
             </div>
 
-            {/* Orbit / Bento Dashboard */}
+            {/* Life Admin */}
             <button
-              id="tab-overview"
-              onClick={() => setActiveTab('overview')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'overview'
+              id="tab-admin"
+              onClick={() => {
+                setActiveTab('admin');
+                setActionMenuOpen(false);
+              }}
+              className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'admin'
                   ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700 font-extrabold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
-              <LayoutGrid className={`w-3.5 h-3.5 ${activeTab === 'overview' ? 'text-indigo-600' : 'text-slate-500'}`} />
-              <span>Your Orbit</span>
+              <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Admin</span>
             </button>
 
             {/* Satellites */}
             <button
               id="tab-habits"
-              onClick={() => setActiveTab('habits')}
+              onClick={() => {
+                setActiveTab('habits');
+                setActionMenuOpen(false);
+              }}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'habits'
                   ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700 font-extrabold'
@@ -231,7 +274,10 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
             <button
               id="tab-wellbeing"
-              onClick={() => setActiveTab('wellbeing')}
+              onClick={() => {
+                setActiveTab('wellbeing');
+                setActionMenuOpen(false);
+              }}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'wellbeing'
                   ? 'bg-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] border border-slate-900 text-indigo-700 font-extrabold'

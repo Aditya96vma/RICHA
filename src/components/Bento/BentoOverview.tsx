@@ -807,7 +807,73 @@ export function BentoOverview({ onNavigateTab }: BentoOverviewProps) {
             </div>
           </section>
 
-          {/* 6. Socratic Executive Inquiry & Reasoning Tile (Span 12) */}
+          {/* 6. Agent 3: Decision Matrix & Psychological Dilemma Advisor (Span 12) */}
+          <section className="col-span-12 bg-amber-50/90 dark:bg-[#1a140a] border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-200 dark:bg-amber-900/60 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[1px_1px_0px_0px_rgba(15,23,42,1)] shrink-0">
+                  <Scale className="w-4.5 h-4.5 text-amber-900 dark:text-amber-200" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                      Agent 3 • MCDA Decision Engine
+                    </span>
+                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 bg-amber-200 dark:bg-amber-900/80 text-amber-950 dark:text-amber-100 rounded border border-amber-400 dark:border-amber-700">
+                      Satisficing & Two-Way Doors
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-tight">
+                    Decision Matrix & Suggestion Advisor
+                  </h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onNavigateTab('decision')}
+                className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 dark:bg-amber-500 dark:hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl border-2 border-slate-900 dark:border-amber-400 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] flex items-center gap-1.5 cursor-pointer shrink-0 transition-all"
+              >
+                <Scale className="w-3.5 h-3.5" />
+                <span>Launch Decision Matrix</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium mb-3">
+              Paralyzed by competing choices? Evaluate options with Multi-Criteria Decision Analysis (MCDA), Herbert Simon Satisficing, and Bezos Two-Way Door reversibility checks to find your <strong>Minimum Viable Commitment</strong>.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-200 dark:border-amber-900/60">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Quick Dilemmas:
+              </span>
+              <button
+                type="button"
+                onClick={() => onNavigateTab('decision', { taskText: 'Push through sprint tonight vs. Stop now and recover energy baseline' })}
+                className="text-[11px] font-bold px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-amber-100 dark:hover:bg-amber-950/70 text-slate-800 dark:text-slate-200 border border-amber-300 dark:border-amber-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <span>Push through vs Rest baseline</span>
+                <ArrowRight className="w-3 h-3 text-amber-600" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigateTab('decision', { taskText: 'Build all edge-case features now vs. Ship minimum viable test today' })}
+                className="text-[11px] font-bold px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-amber-100 dark:hover:bg-amber-950/70 text-slate-800 dark:text-slate-200 border border-amber-300 dark:border-amber-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <span>Full perfection vs Minimum viable test</span>
+                <ArrowRight className="w-3 h-3 text-amber-600" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigateTab('decision')}
+                className="text-[11px] font-bold px-2.5 py-1 bg-amber-200/80 dark:bg-amber-900/40 hover:bg-amber-300 text-amber-950 dark:text-amber-200 border border-amber-400 dark:border-amber-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <span>+ Custom Dilemma</span>
+              </button>
+            </div>
+          </section>
+
+          {/* 7. Socratic Executive Inquiry & Reasoning Tile (Span 12) */}
           <section className="col-span-12 bg-amber-50/80 dark:bg-[#18130a] border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2.5">

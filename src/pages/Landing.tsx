@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useDemoMode } from '../context/DemoModeContext';
 import { GlobalControls } from '../components/shared/GlobalControls';
-import { Sparkles, Brain, CheckCircle2, ShieldCheck, ArrowRight, Zap, RefreshCw, Calendar, HeartHandshake, AlertTriangle, Copy, ExternalLink, HelpCircle, Check } from 'lucide-react';
+import { Sparkles, Brain, CheckCircle2, ShieldCheck, ArrowRight, Zap, RefreshCw, Calendar, HeartHandshake, AlertTriangle, Copy, ExternalLink, HelpCircle, Check, Scale, BookOpen, Layers, MessageSquare, Flame } from 'lucide-react';
 
 export function Landing({ onNavigateToDashboard }: { onNavigateToDashboard: () => void }) {
   const { user, loginWithGoogle, loginAsDemoUser, loading } = useAuth();
@@ -76,7 +76,7 @@ export function Landing({ onNavigateToDashboard }: { onNavigateToDashboard: () =
           title: 'Authentication Attempt Notice',
           code: code || 'auth/error',
           message: msg || 'Unable to complete Google sign-in.',
-          suggestion: 'You can test all 7 agents right now by clicking "Explore Sandbox".'
+          suggestion: 'You can test all 8 agents right now by clicking "Explore Sandbox".'
         });
       }
     }
@@ -133,7 +133,7 @@ export function Landing({ onNavigateToDashboard }: { onNavigateToDashboard: () =
       </header>
 
       {/* Main Hero Section */}
-      <main className="w-full max-w-5xl mx-auto px-6 py-8 flex-1 flex flex-col justify-center">
+      <main className="w-full max-w-6xl mx-auto px-6 py-8 flex-1 flex flex-col justify-center">
         <div className="text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border-2 border-slate-900 text-slate-900 text-xs font-extrabold mb-6 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
             <Sparkles className="w-4 h-4 text-indigo-600" />
@@ -145,8 +145,8 @@ export function Landing({ onNavigateToDashboard }: { onNavigateToDashboard: () =
             <span className="text-indigo-600">Unstick your day without overwhelm.</span>
           </h2>
 
-          <p className="text-base sm:text-lg text-slate-700 max-w-2xl mx-auto leading-relaxed mb-8 font-medium">
-            RICHA orchestrates 7 specialized AI agents to gently break down paralyzing tasks, apply Morgenstern 4D prioritization, prevent sensory burnout, and maintain life domains.
+          <p className="text-base sm:text-lg text-slate-700 max-w-3xl mx-auto leading-relaxed mb-8 font-medium">
+            RICHA orchestrates 8 specialized autonomous AI agents to break down intimidating projects, resolve analysis paralysis with multi-criteria decision models, apply Morgenstern 4D prioritization, prevent sensory burnout, and protect your cognitive energy.
           </p>
 
           {/* Authentication Alert / Diagnostic Banner if error occurred */}
@@ -204,7 +204,7 @@ export function Landing({ onNavigateToDashboard }: { onNavigateToDashboard: () =
                 </div>
                 <div>
                   <p className="text-xs font-black text-amber-300 uppercase tracking-wider">Demo Mode is Enabled</p>
-                  <p className="text-xs text-purple-200">Explore pre-populated examples across all 7 agents.</p>
+                  <p className="text-xs text-purple-200">Explore pre-populated examples across all 8 agents.</p>
                 </div>
               </div>
               <button
@@ -226,7 +226,7 @@ export function Landing({ onNavigateToDashboard }: { onNavigateToDashboard: () =
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full sm:w-auto flex-1 flex items-center justify-center gap-3 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white rounded-xl font-extrabold border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] transition-all hover:translate-y-[-1px] uppercase tracking-wider text-xs"
+              className="w-full sm:w-auto flex-1 flex items-center justify-center gap-3 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white rounded-xl font-extrabold border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] transition-all hover:translate-y-[-1px] uppercase tracking-wider text-xs cursor-pointer"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -242,7 +242,7 @@ export function Landing({ onNavigateToDashboard }: { onNavigateToDashboard: () =
               id="instant-demo-button"
               type="button"
               onClick={handleDemoLogin}
-              className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-100 border-2 border-slate-900 text-slate-900 font-extrabold rounded-xl transition-all shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex items-center justify-center gap-2 uppercase tracking-wider text-xs"
+              className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-100 border-2 border-slate-900 text-slate-900 font-extrabold rounded-xl transition-all shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex items-center justify-center gap-2 uppercase tracking-wider text-xs cursor-pointer"
             >
               <span>Explore Sandbox</span>
               <ArrowRight className="w-4 h-4 text-slate-700" />
@@ -254,46 +254,119 @@ export function Landing({ onNavigateToDashboard }: { onNavigateToDashboard: () =
           </p>
         </div>
 
-        {/* 7 Specialized Agents Feature Bento Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12">
-          <div className="bg-white p-5 rounded-2xl border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-2px] transition-all">
-            <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-800 border-2 border-slate-900 flex items-center justify-center mb-3 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
-              <Zap className="w-5 h-5" />
-            </div>
-            <h3 className="font-extrabold text-slate-900 text-sm mb-1 uppercase tracking-wider">1. Planner Protocol</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              Chunks intimidating projects into 15/25 min micro-steps with realistic time checks.
-            </p>
+        {/* 8 Specialized Autonomous Agents Bento Showcase */}
+        <div className="mt-12">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+              The 8 Specialized Autonomous Agents
+            </h3>
+            <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+              Full Multi-Agent Orchestration
+            </span>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-2px] transition-all">
-            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 border-2 border-slate-900 flex items-center justify-center mb-3 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
-              <RefreshCw className="w-5 h-5" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Agent 1: Core Journal & Voice */}
+            <div className="bg-white p-4.5 rounded-2xl border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-2px] transition-all">
+              <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-800 border-2 border-slate-900 flex items-center justify-center mb-2.5 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                <Brain className="w-4.5 h-4.5" />
+              </div>
+              <div className="text-[10px] font-black text-indigo-600 uppercase tracking-wider">Agent 1 • Hearth</div>
+              <h4 className="font-extrabold text-slate-900 text-xs mb-1 uppercase tracking-wider">RICHA Core & Voice</h4>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Pennebaker expressive writing, Carl Rogers empathetic resonance, voice transcriptions, and private memory vaults.
+              </p>
             </div>
-            <h3 className="font-extrabold text-slate-900 text-sm mb-1 uppercase tracking-wider">2. 4D Prioritizer</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              Delete, Delay, Diminish to Minimum Viable Version (MVV), or Delegate without guilt.
-            </p>
-          </div>
 
-          <div className="bg-white p-5 rounded-2xl border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-2px] transition-all">
-            <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-800 border-2 border-slate-900 flex items-center justify-center mb-3 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
-              <HeartHandshake className="w-5 h-5" />
+            {/* Agent 2: 4D Prioritizer */}
+            <div className="bg-white p-4.5 rounded-2xl border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-2px] transition-all">
+              <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 border-2 border-slate-900 flex items-center justify-center mb-2.5 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                <RefreshCw className="w-4.5 h-4.5" />
+              </div>
+              <div className="text-[10px] font-black text-amber-600 uppercase tracking-wider">Agent 2 • Triage</div>
+              <h4 className="font-extrabold text-slate-900 text-xs mb-1 uppercase tracking-wider">4D Prioritizer</h4>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Julie Morgenstern anti-perfectionism: Delete, Delay, Diminish to Minimum Viable Version (MVV), or Delegate.
+              </p>
             </div>
-            <h3 className="font-extrabold text-slate-900 text-sm mb-1 uppercase tracking-wider">3. Burnout Shield</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              Detects sensory drain, interrupts shame spirals, and scripts low-demand recovery rituals.
-            </p>
-          </div>
 
-          <div className="bg-white p-5 rounded-2xl border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-2px] transition-all">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 border-2 border-slate-900 flex items-center justify-center mb-3 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
-              <Calendar className="w-5 h-5" />
+            {/* Agent 3: Decision Matrix (Prominently Highlighted) */}
+            <div className="bg-amber-50/80 p-4.5 rounded-2xl border-2 border-amber-600 shadow-[3px_3px_0px_0px_rgba(217,119,6,1)] hover:translate-y-[-2px] transition-all relative">
+              <div className="absolute top-2.5 right-2.5">
+                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-amber-400 text-amber-950 rounded border border-amber-600">
+                  Featured
+                </span>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-amber-200 text-amber-900 border-2 border-slate-900 flex items-center justify-center mb-2.5 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                <Scale className="w-4.5 h-4.5 text-amber-900" />
+              </div>
+              <div className="text-[10px] font-black text-amber-700 uppercase tracking-wider">Agent 3 • MCDA Engine</div>
+              <h4 className="font-extrabold text-slate-950 text-xs mb-1 uppercase tracking-wider">Decision Matrix</h4>
+              <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                Multi-Criteria Decision Analysis, Herbert Simon Satisficing, Bezos Two-Way Doors, and 10/10/10 perspective.
+              </p>
             </div>
-            <h3 className="font-extrabold text-slate-900 text-sm mb-1 uppercase tracking-wider">4. Life Admin Hub</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              Maintains recurring chores (groceries, laundry, bills) and important date buffers.
-            </p>
+
+            {/* Agent 4: Life Admin Hub */}
+            <div className="bg-white p-4.5 rounded-2xl border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-2px] transition-all">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 border-2 border-slate-900 flex items-center justify-center mb-2.5 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                <Calendar className="w-4.5 h-4.5" />
+              </div>
+              <div className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Agent 4 • Routines</div>
+              <h4 className="font-extrabold text-slate-900 text-xs mb-1 uppercase tracking-wider">Life Admin Hub</h4>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Domestic upkeep loops, recurring chores, bill buffers, and 30% temporal transition buffers to prevent lateness.
+              </p>
+            </div>
+
+            {/* Agent 5: Sensory Shield */}
+            <div className="bg-white p-4.5 rounded-2xl border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-2px] transition-all">
+              <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-800 border-2 border-slate-900 flex items-center justify-center mb-2.5 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                <HeartHandshake className="w-4.5 h-4.5" />
+              </div>
+              <div className="text-[10px] font-black text-rose-600 uppercase tracking-wider">Agent 5 • Grounding</div>
+              <h4 className="font-extrabold text-slate-900 text-xs mb-1 uppercase tracking-wider">Sensory Shield</h4>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Polyvagal low-arousal de-escalation, sub-5ms acute distress bypass, shame interruption, and sensory resets.
+              </p>
+            </div>
+
+            {/* Agent 6: Micro-Planner */}
+            <div className="bg-white p-4.5 rounded-2xl border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-2px] transition-all">
+              <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-800 border-2 border-slate-900 flex items-center justify-center mb-2.5 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                <Zap className="w-4.5 h-4.5" />
+              </div>
+              <div className="text-[10px] font-black text-sky-600 uppercase tracking-wider">Agent 6 • Slicing</div>
+              <h4 className="font-extrabold text-slate-900 text-xs mb-1 uppercase tracking-wider">Micro-Step Planner</h4>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Dismantles high-friction obligations into 15/25 min micro-steps with dopamine pacing and implementation intentions.
+              </p>
+            </div>
+
+            {/* Agent 7: Bullet Log */}
+            <div className="bg-white p-4.5 rounded-2xl border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-2px] transition-all">
+              <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-800 border-2 border-slate-900 flex items-center justify-center mb-2.5 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                <BookOpen className="w-4.5 h-4.5" />
+              </div>
+              <div className="text-[10px] font-black text-purple-600 uppercase tracking-wider">Agent 7 • BuJo Log</div>
+              <h4 className="font-extrabold text-slate-900 text-xs mb-1 uppercase tracking-wider">Rapid Bullet Journal</h4>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Ryder Carroll rapid logging syntax: tasks, thoughts, notes, and events with automatic triage into action buckets.
+              </p>
+            </div>
+
+            {/* Agent 8: Kanban & Habits */}
+            <div className="bg-white p-4.5 rounded-2xl border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-2px] transition-all">
+              <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-800 border-2 border-slate-900 flex items-center justify-center mb-2.5 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
+                <Layers className="w-4.5 h-4.5" />
+              </div>
+              <div className="text-[10px] font-black text-teal-600 uppercase tracking-wider">Agent 8 • Lean WIP</div>
+              <h4 className="font-extrabold text-slate-900 text-xs mb-1 uppercase tracking-wider">Kanban & Habits</h4>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Strict 3-card WIP limits to prevent task accumulation, stagnation warnings, and low-demand habit streak anchors.
+              </p>
+            </div>
           </div>
         </div>
       </main>
