@@ -20,28 +20,28 @@ Rather than treating executive function as an individual deficit to be cured by 
 ### 1. Bento Hub Central Dashboard (Your Executive Orbit)
 *An asymmetrical, Neo-Brutalist control center featuring real-time working memory capture, cognitive battery gauge, habit momentum, and automatic dilemma detection.*
 
-![RICHA Bento Hub Dashboard](docs/screenshots/01-bento-hub-dashboard.svg)
+<img src="./docs/screenshots/01-bento-hub-dashboard.svg" alt="RICHA Bento Hub Dashboard" width="100%" />
 
 ---
 
 ### 2. Decision Matrix & Suggestion Advisor (MCDA Engine)
 *Analysis paralysis resolution using Herbert Simon's Bounded Rationality, Suzy Welch's 10/10/10 rule, Bezos' Two-Way Door principle, and quantitative Multi-Criteria Decision Analysis.*
 
-![RICHA Decision Matrix and Advisor](docs/screenshots/02-decision-matrix-mcda.svg)
+<img src="./docs/screenshots/02-decision-matrix-mcda.svg" alt="RICHA Decision Matrix and Advisor" width="100%" />
 
 ---
 
 ### 3. Socratic Hearth & 4D Executive Triage
 *Active listening audio voice diary with live speech-to-text, real-time agent routing (`Agent 2 • 4D Prioritizer`), Morgenstern 4D triage cards, and automatic memory vault harvesting.*
 
-![RICHA Socratic Hearth and 4D Triage](docs/screenshots/03-socratic-hearth-4d-triage.svg)
+<img src="./docs/screenshots/03-socratic-hearth-4d-triage.svg" alt="RICHA Socratic Hearth and 4D Triage" width="100%" />
 
 ---
 
 ### 4. State-of-the-Art Adaptive Dark Mode & 8-Agent Demo Showcase
 *High-contrast, photophobia-friendly dark mode with the permanent Decision Matrix top navigation, 8-agent demo navigator, and frictionless "Continue with Google" authentication.*
 
-![RICHA Dark Mode and Demo Showcase](docs/screenshots/04-dark-mode-and-demo-showcase.svg)
+<img src="./docs/screenshots/04-dark-mode-and-demo-showcase.svg" alt="RICHA Dark Mode and Demo Showcase" width="100%" />
 
 ---
 
